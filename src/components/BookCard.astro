@@ -15,7 +15,7 @@ const data = book.data;
   data-id={book.id}
   data-title={data.title.toLowerCase()}
   data-author={data.author.toLowerCase()}
-  data-isbn={(data.isbn || '').replace(/[-\s]/g, '').toLowerCase()}
+  data-isbn={(data.isbn || '').replace(/^isbn[:\s]*/i, '').replace(/[-\s\u2010-\u2015]/g, '').toLowerCase()}
   data-genres={data.genres.map((g: string) => g.toLowerCase()).join(',')}
   data-added={new Date(data.addedAt).getTime()}
   data-year={data.year || 0}
@@ -42,7 +42,7 @@ const data = book.data;
 
   <!-- Title: Inter 18/24px, weight 600, max 2 lines (min-h-[48px] reserves 2 lines as per DESIGN.md 9.1) -->
   <h2 class="text-[18px] leading-[24px] font-semibold text-[var(--color-text)] line-clamp-2 min-h-[48px] mb-1 group-hover:text-[var(--color-primary)] transition-colors">
-    <a href={`/books/${book.id}`} class="hover:underline">
+    <a href={`/books/${book.id}`} class="hover:underline focus-visible:underline">
       {data.title}
     </a>
   </h2>

@@ -126,7 +126,7 @@ def download_image(url: str, dest_path: Path) -> bool:
         return False
 
 def search_google_books(query: str, isbn: str = None):
-    clean_isbn = (isbn or '').replace('-', '').replace(' ', '')
+    clean_isbn = re.sub(r'(?i)^isbn[:\s]*|[-\s\u2010-\u2015]', '', isbn or '')
     q = f"isbn:{clean_isbn}" if clean_isbn else query
     encoded_q = urllib.parse.quote(q)
     url = f"https://www.googleapis.com/books/v1/volumes?q={encoded_q}&maxResults=3&langRestrict=ru"
@@ -181,7 +181,7 @@ def search_google_books(query: str, isbn: str = None):
     }
 
 def search_open_library(query: str, isbn: str = None):
-    clean_isbn = (isbn or '').replace('-', '').replace(' ', '')
+    clean_isbn = re.sub(r'(?i)^isbn[:\s]*|[-\s\u2010-\u2015]', '', isbn or '')
     q = clean_isbn if clean_isbn else query
     encoded_q = urllib.parse.quote(q)
     url = f"https://openlibrary.org/search.json?q={encoded_q}&limit=3"
@@ -213,7 +213,8 @@ def search_open_library(query: str, isbn: str = None):
 def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
              status: str = "read", rating: int = None, photo_path: str = None,
              custom_cover: str = None, year: int = None, publisher: str = None,
-             pages: int = None, genres: list = None, description: str = None):
+             pages: int = None, genres: list = None, description: str = None,
+             force: bool = False):
     search_q = (query or "").strip() or f"{author} {title}".strip()
     book_info = None
 
@@ -267,6 +268,11 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
     final_title = book_info['title']
     final_author = book_info['author']
     slug = f"{slugify(final_author)}-{slugify(final_title)}"
+
+    md_file = BOOKS_DIR / f"{slug}.md"
+    if md_file.exists() and not force:
+        print(f"[!] Файл книги уже существует: {md_file.name}. Используйте --force для перезаписи.", file=sys.stderr)
+        return False
 
     # Determine cover
     cover_rel_path = "/covers/default-book.svg"
@@ -368,6 +374,7 @@ def main():
     parser.add_argument("-r", "--rating", type=int, choices=[1, 2, 3, 4, 5], help="Оценка от 1 до 5")
     parser.add_argument("-p", "--photo", help="Путь к файлу фотографии из incoming_photos/")
     parser.add_argument("-c", "--cover", help="Прямой URL качественной обложки")
+    parser.add_argument("-f", "--force", action="store_true", help="Перезаписать существующую запись книги")
 
     args = parser.parse_args()
 
@@ -375,7 +382,7 @@ def main():
         parser.print_help()
         sys.exit(1)
 
-    add_book(
+    success = add_book(
         query=args.query or "",
         title=args.title or "",
         author=args.author or "",
@@ -388,8 +395,11 @@ def main():
         publisher=args.publisher,
         pages=args.pages,
         genres=args.genres or [],
-        description=args.desc or ""
+        description=args.desc or "",
+        force=args.force
     )
+    if not success:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

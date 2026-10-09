@@ -40,7 +40,7 @@ if (data.status === 'reading') {
     <div class="mb-8">
       <a 
         href="/" 
-        onclick="try { if (document.referrer && new URL(document.referrer).origin === window.location.origin && window.history.length > 1) { window.history.back(); return false; } } catch {}"
+        id="back-to-catalog-btn"
         class="inline-flex items-center gap-2 text-[15px] font-medium text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors group"
       >
         <ArrowLeft class="w-4 h-4 stroke-[2] transition-transform group-hover:-translate-x-1" />
@@ -159,3 +159,35 @@ if (data.status === 'reading') {
     </div>
   </div>
 </Layout>
+
+<script>
+  function initBackButton() {
+    const backBtn = document.getElementById('back-to-catalog-btn');
+    backBtn?.addEventListener('click', (e) => {
+      if (
+        e.defaultPrevented ||
+        e.button !== 0 ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.shiftKey ||
+        e.altKey
+      ) {
+        return;
+      }
+      try {
+        if (
+          document.referrer &&
+          new URL(document.referrer).origin === window.location.origin &&
+          new URL(document.referrer).pathname === '/' &&
+          window.history.length > 1
+        ) {
+          e.preventDefault();
+          window.history.back();
+        }
+      } catch {}
+    });
+  }
+
+  initBackButton();
+  document.addEventListener('astro:after-swap', initBackButton);
+</script>

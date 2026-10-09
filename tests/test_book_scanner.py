@@ -23,7 +23,9 @@ from scripts.book_scanner import (
     clean_description,
     download_image,
     is_valid_image,
+    main,
     search_google_books,
+    search_open_library,
     slugify,
 )
 
@@ -328,6 +330,67 @@ class TestSearchGoogleBooks(unittest.TestCase):
         result = search_google_books("Несуществующая книга")
         self.assertIsNone(result)
 
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_google_books_isbn_cleaning(self, mock_fetch_json):
+        mock_fetch_json.return_value = {"items": [{"volumeInfo": {"title": "Test"}}]}
+        # Typographical en-dash (\u2013) and "ISBN: " prefix
+        search_google_books("ignored query", isbn="ISBN: 978–5–4461–0960–9")
+        mock_fetch_json.assert_called_with(
+            "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9785446109609&maxResults=3&langRestrict=ru"
+        )
+
+        # Typographical em-dash (\u2014) and lowercase "isbn:" prefix
+        search_google_books("", isbn="isbn: 978—123—456")
+        mock_fetch_json.assert_called_with(
+            "https://www.googleapis.com/books/v1/volumes?q=isbn%3A978123456&maxResults=3&langRestrict=ru"
+        )
+
+
+class TestSearchOpenLibrary(unittest.TestCase):
+    """Tests for search_open_library function."""
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_open_library_isbn_cleaning(self, mock_fetch_json):
+        mock_fetch_json.return_value = {"docs": []}
+        # Typographical en-dash (\u2013) and "ISBN: " prefix
+        search_open_library("ignored query", isbn="ISBN: 978–5–4461–0960–9")
+        mock_fetch_json.assert_called_with(
+            "https://openlibrary.org/search.json?q=9785446109609&limit=3"
+        )
+
+        # Typographical em-dash (\u2014) and lowercase "isbn: " prefix
+        search_open_library("", isbn="isbn: 978—123—456")
+        mock_fetch_json.assert_called_with(
+            "https://openlibrary.org/search.json?q=978123456&limit=3"
+        )
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_open_library_valid_payload(self, mock_fetch_json):
+        mock_fetch_json.return_value = {
+            "docs": [
+                {
+                    "title": "Преступление и наказание",
+                    "author_name": ["Фёдор Достоевский"],
+                    "first_publish_year": 1866,
+                    "publisher": ["Русский вестник"],
+                    "isbn": ["9785171123456"],
+                    "number_of_pages_median": 672,
+                    "subject": ["Классика", "Роман"],
+                    "language": ["rus"],
+                    "cover_i": 123456,
+                }
+            ]
+        }
+        result = search_open_library("Преступление и наказание")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["title"], "Преступление и наказание")
+        self.assertEqual(result["author"], "Фёдор Достоевский")
+        self.assertEqual(result["year"], 1866)
+        self.assertEqual(result["publisher"], "Русский вестник")
+        self.assertEqual(result["isbn"], "9785171123456")
+        self.assertEqual(result["pages"], 672)
+        self.assertEqual(result["cover_url"], "https://covers.openlibrary.org/b/id/123456-L.jpg")
+
 
 class TestAddBook(unittest.TestCase):
     """Tests for add_book function."""
@@ -514,6 +577,59 @@ class TestAddBook(unittest.TestCase):
         mock_search.assert_called_once_with("Лев Толстой Война и мир", isbn="")
         expected_md = self.books_dir / "lev-tolstoy-voyna-i-mir.md"
         self.assertTrue(expected_md.exists())
+
+    def test_add_book_collision_without_force_fails_and_preserves_file(self):
+        slug_md = self.books_dir / "testovyy-avtor-testovaya-kniga.md"
+        original_content = "--- title: Original ---"
+        slug_md.write_text(original_content, encoding="utf-8")
+
+        with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+            result = add_book(
+                title="Тестовая книга",
+                author="Тестовый автор",
+                year=2024,
+                custom_cover="/covers/default-book.svg",
+                force=False,
+            )
+
+        self.assertFalse(result)
+        self.assertTrue(slug_md.exists())
+        self.assertEqual(slug_md.read_text(encoding="utf-8"), original_content)
+        self.assertIn("уже существует", mock_stderr.getvalue())
+
+    def test_add_book_collision_with_force_overwrites(self):
+        slug_md = self.books_dir / "testovyy-avtor-testovaya-kniga.md"
+        original_content = "--- title: Original ---"
+        slug_md.write_text(original_content, encoding="utf-8")
+
+        result = add_book(
+            title="Тестовая книга",
+            author="Тестовый автор",
+            description="Обновленное описание книги",
+            year=2024,
+            custom_cover="/covers/default-book.svg",
+            force=True,
+        )
+
+        self.assertTrue(result)
+        self.assertTrue(slug_md.exists())
+        updated_content = slug_md.read_text(encoding="utf-8")
+        self.assertNotEqual(updated_content, original_content)
+        self.assertIn("Обновленное описание книги", updated_content)
+
+    @patch("scripts.book_scanner.add_book", return_value=True)
+    def test_cli_force_argument_handling(self, mock_add_book):
+        with patch.object(sys, "argv", ["book_scanner.py", "-t", "Тест", "-a", "Автор", "--force"]):
+            main()
+        self.assertTrue(mock_add_book.call_args[1]["force"])
+
+        with patch.object(sys, "argv", ["book_scanner.py", "-t", "Тест", "-a", "Автор", "-f"]):
+            main()
+        self.assertTrue(mock_add_book.call_args[1]["force"])
+
+        with patch.object(sys, "argv", ["book_scanner.py", "-t", "Тест", "-a", "Автор"]):
+            main()
+        self.assertFalse(mock_add_book.call_args[1]["force"])
 
 
 if __name__ == "__main__":

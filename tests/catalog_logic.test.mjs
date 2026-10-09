@@ -138,6 +138,20 @@ test('4. Фильтрация по ярлыкам (matchesGenre)', async (t) => 
     assert.equal(matchesFilter(book, 'дизайн', 'программирование'), false);
     assert.equal(matchesFilter(book, 'математика', 'дизайн'), false);
   });
+
+  await t.test('поддерживает строковое представление жанров через запятую из dataset', () => {
+    const datasetBook = {
+      title: 'Дизайн для недизайнеров',
+      author: 'Робин Уильямс',
+      isbn: '978-5-00000-000-0',
+      genres: 'дизайн,типографика,компьютерные науки',
+    };
+    assert.equal(matchesGenre(datasetBook, 'типографика'), true);
+    assert.equal(matchesGenre(datasetBook, 'компьютерные науки'), true);
+    assert.equal(matchesGenre(datasetBook, 'программирование'), false);
+    assert.equal(matchesFilter(datasetBook, 'робин', 'типографика'), true);
+    assert.equal(matchesFilter(datasetBook, 'толстой', 'типографика'), false);
+  });
 });
 
 test('5. Компараторы сортировки (compareBooks)', async (t) => {
@@ -229,5 +243,33 @@ test('5. Компараторы сортировки (compareBooks)', async (t) 
       'no-author-3',
       'no-author-1',
     ]);
+  });
+
+  await t.test('сортировка работает корректно со строковыми dataset-атрибутами', () => {
+    const datasetBooks = [
+      { id: 'b-1', title: 'Язык C', author: 'Керниган', added: '1700000000', year: '1988' },
+      { id: 'b-2', title: 'Алгоритмы', author: 'Кормен', added: '1720000000', year: '2020' },
+      { id: 'b-3', title: 'Чистый код', author: 'Мартин', added: '1710000000', year: '2019' },
+    ];
+    const sortedRecent = [...datasetBooks].sort((a, b) => compareBooks(a, b, 'recent'));
+    assert.deepEqual(sortedRecent.map((b) => b.id), ['b-2', 'b-3', 'b-1']);
+
+    const sortedTitle = [...datasetBooks].sort((a, b) => compareBooks(a, b, 'title'));
+    assert.deepEqual(sortedTitle.map((b) => b.id), ['b-2', 'b-3', 'b-1']); // Алгоритмы -> Чистый код -> Язык C
+
+    const sortedAuthor = [...datasetBooks].sort((a, b) => compareBooks(a, b, 'author'));
+    assert.deepEqual(sortedAuthor.map((b) => b.id), ['b-1', 'b-2', 'b-3']); // Керниган -> Кормен -> Мартин
+  });
+
+  await t.test('тай-брейк по id при совпадающих названии и авторе', () => {
+    const identicalBooks = [
+      { id: 'b-z', title: 'Дубликат', author: 'Автор', added: 100, year: 2020 },
+      { id: 'b-a', title: 'Дубликат', author: 'Автор', added: 100, year: 2020 },
+    ];
+    const sortedTitle = [...identicalBooks].sort((a, b) => compareBooks(a, b, 'title'));
+    assert.deepEqual(sortedTitle.map((b) => b.id), ['b-a', 'b-z']);
+
+    const sortedAuthor = [...identicalBooks].sort((a, b) => compareBooks(a, b, 'author'));
+    assert.deepEqual(sortedAuthor.map((b) => b.id), ['b-a', 'b-z']);
   });
 });

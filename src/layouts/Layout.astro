@@ -110,7 +110,7 @@ const genres = Array.from(genreMap.values())
     <!-- Skip link for keyboard accessibility -->
     <a 
       href="#main-content" 
-      class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-[var(--color-primary)] focus:text-white focus:rounded-lg focus:shadow-lg focus:outline-none"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-[var(--color-primary)] focus:text-[var(--color-on-primary)] focus:rounded-lg focus:shadow-lg focus:outline-none"
     >
       Перейти к книгам
     </a>
@@ -121,8 +121,8 @@ const genres = Array.from(genreMap.values())
         <button
           type="button"
           id="open-drawer-btn"
-          class="p-2 -ml-2 text-[var(--color-text)] hover:bg-[var(--color-hover-surface)] rounded-lg transition-colors cursor-pointer"
-          aria-label="Открыть навигацию"
+          class="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 -ml-2 text-[var(--color-text)] hover:bg-[var(--color-hover-surface)] rounded-lg transition-colors cursor-pointer"
+          aria-label="Открыть ярлыки"
         >
           <Menu class="w-6 h-6 stroke-[1.8]" />
         </button>
@@ -139,7 +139,7 @@ const genres = Array.from(genreMap.values())
     <!-- Mobile Navigation Drawer -->
     <div 
       id="mobile-drawer-overlay"
-      class="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs hidden transition-opacity duration-200 lg:hidden"
+      class="fixed inset-0 z-40 bg-[var(--color-scrim)] backdrop-blur-xs hidden transition-opacity duration-200 lg:hidden"
       aria-hidden="true"
     ></div>
     <div 
@@ -147,7 +147,7 @@ const genres = Array.from(genreMap.values())
       class="fixed inset-y-0 left-0 z-50 w-[min(312px,88vw)] bg-[var(--color-sidebar)] shadow-2xl transform -translate-x-full transition-transform duration-250 ease-out lg:hidden"
       role="dialog"
       aria-modal="true"
-      aria-label="Боковая навигация"
+      aria-label="Ярлыки библиотеки"
       inert
     >
       <Sidebar 
@@ -177,6 +177,7 @@ const genres = Array.from(genreMap.values())
     <!-- Layout Global Scripts -->
     <script>
       let closeDrawerTimeout: number | undefined;
+      let openDrawerTimeout: number | undefined;
 
       function initLayout() {
         const openDrawerBtn = document.getElementById('open-drawer-btn');
@@ -190,19 +191,32 @@ const genres = Array.from(genreMap.values())
             clearTimeout(closeDrawerTimeout);
             closeDrawerTimeout = undefined;
           }
+          if (openDrawerTimeout) {
+            clearTimeout(openDrawerTimeout);
+            openDrawerTimeout = undefined;
+          }
           drawer.removeAttribute('inert');
           drawerOverlay.classList.remove('hidden');
-          setTimeout(() => {
+          document.getElementById('main-content')?.setAttribute('inert', '');
+          document.querySelector('header')?.setAttribute('inert', '');
+          openDrawerTimeout = window.setTimeout(() => {
             drawer.classList.remove('-translate-x-full');
             closeDrawerBtn?.focus();
+            openDrawerTimeout = undefined;
           }, 10);
           document.body.style.overflow = 'hidden';
         }
 
         function closeDrawer() {
           if (!drawer || !drawerOverlay) return;
+          if (openDrawerTimeout) {
+            clearTimeout(openDrawerTimeout);
+            openDrawerTimeout = undefined;
+          }
           drawer.classList.add('-translate-x-full');
           drawer.setAttribute('inert', '');
+          document.getElementById('main-content')?.removeAttribute('inert');
+          document.querySelector('header')?.removeAttribute('inert');
           if (closeDrawerTimeout) {
             clearTimeout(closeDrawerTimeout);
           }

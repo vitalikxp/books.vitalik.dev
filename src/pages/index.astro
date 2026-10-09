@@ -9,23 +9,32 @@ import {
   ArrowDownAZ, 
   User, 
   RotateCcw,
-  BookOpen
+  BookOpen,
+  ChevronDown
 } from '@lucide/astro';
+import { compareBooks } from '../utils/catalog.js';
 
 const allBooks = await getCollection('books');
 
 // Sort by date added descending by default (DESIGN.md 8.2), with year and title as tie-breakers
 const sortedBooks = [...allBooks].sort((a, b) => {
-  const addedA = a.data.addedAt ? new Date(a.data.addedAt).getTime() : 0;
-  const addedB = b.data.addedAt ? new Date(b.data.addedAt).getTime() : 0;
-  const addedDiff = addedB - addedA;
-  if (addedDiff !== 0) return addedDiff;
-  const yearA = a.data.year || 0;
-  const yearB = b.data.year || 0;
-  if (yearB !== yearA) {
-    return yearB - yearA;
-  }
-  return a.data.title.localeCompare(b.data.title, 'ru');
+  return compareBooks(
+    {
+      id: a.id,
+      title: a.data.title,
+      author: a.data.author,
+      added: a.data.addedAt ? new Date(a.data.addedAt).getTime() : 0,
+      year: a.data.year || 0,
+    },
+    {
+      id: b.id,
+      title: b.data.title,
+      author: b.data.author,
+      added: b.data.addedAt ? new Date(b.data.addedAt).getTime() : 0,
+      year: b.data.year || 0,
+    },
+    'recent'
+  );
 });
 ---
 
@@ -34,8 +43,8 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     <!-- Accessible hidden document H1 for screen readers -->
     <h1 class="sr-only">Каталог книг</h1>
 
-    <!-- Single Unified Toolbar: Search Input + Sorting Button Group -->
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6 sm:mb-8">
+    <!-- Single Unified Toolbar: Search Input + Sorting Group -->
+    <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-6 sm:mb-8">
       <!-- Search Bar (takes all flexible space) -->
       <div class="relative flex-1 min-w-0">
         <label for="catalog-search" class="sr-only">Поиск по библиотеке</label>
@@ -59,46 +68,87 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         </button>
       </div>
 
-      <!-- Sorting Button Group with Icons -->
+      <!-- Sorting Button Group for Desktop/Tablet (hidden on mobile < 768px, Fix 4) -->
       <div 
-        class="inline-flex items-center p-1 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] h-[48px] gap-1 shrink-0 self-start sm:self-auto"
-        role="group" 
-        aria-label="Сортировка каталога"
+        id="catalog-sort-radiogroup"
+        class="hidden md:inline-flex items-center p-1 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] h-[48px] gap-1 shrink-0"
+        role="radiogroup" 
+        aria-label="Сортировка книг"
       >
         <button
           type="button"
-          class="sort-btn h-full px-3 sm:px-3.5 rounded-[6px] text-[14px] font-medium transition-colors cursor-pointer flex items-center gap-2 bg-[var(--color-primary)] text-[var(--color-on-primary)] shadow-xs"
+          class="sort-btn h-full px-3.5 rounded-[6px] text-[14px] font-medium transition-colors cursor-pointer flex items-center gap-2 bg-[var(--color-primary)] text-[var(--color-on-primary)] shadow-xs"
           data-sort="recent"
-          title="Недавно добавлены"
-          aria-label="Сортировка: недавно добавленные"
-          aria-pressed="true"
+          role="radio"
+          aria-checked="true"
+          tabindex="0"
         >
           <Clock class="w-4 h-4 stroke-[2]" />
-          <span class="hidden sm:inline">Недавно</span>
+          <span>Недавно</span>
         </button>
         <button
           type="button"
-          class="sort-btn h-full px-3 sm:px-3.5 rounded-[6px] text-[14px] font-medium transition-colors cursor-pointer flex items-center gap-2 text-[var(--color-text)] hover:bg-[var(--color-hover-surface)]"
+          class="sort-btn h-full px-3.5 rounded-[6px] text-[14px] font-medium transition-colors cursor-pointer flex items-center gap-2 text-[var(--color-text)] hover:bg-[var(--color-hover-surface)]"
           data-sort="title"
-          title="По названию: А–Я"
-          aria-label="Сортировка по названию"
-          aria-pressed="false"
+          role="radio"
+          aria-checked="false"
+          tabindex="-1"
         >
           <ArrowDownAZ class="w-4 h-4 stroke-[2]" />
-          <span class="hidden sm:inline">По названию</span>
+          <span>По названию</span>
         </button>
         <button
           type="button"
-          class="sort-btn h-full px-3 sm:px-3.5 rounded-[6px] text-[14px] font-medium transition-colors cursor-pointer flex items-center gap-2 text-[var(--color-text)] hover:bg-[var(--color-hover-surface)]"
+          class="sort-btn h-full px-3.5 rounded-[6px] text-[14px] font-medium transition-colors cursor-pointer flex items-center gap-2 text-[var(--color-text)] hover:bg-[var(--color-hover-surface)]"
           data-sort="author"
-          title="По автору: А–Я"
-          aria-label="Сортировка по автору"
-          aria-pressed="false"
+          role="radio"
+          aria-checked="false"
+          tabindex="-1"
         >
           <User class="w-4 h-4 stroke-[2]" />
-          <span class="hidden sm:inline">По автору</span>
+          <span>По автору</span>
         </button>
       </div>
+
+      <!-- Mobile Sort Select (< 768px, DESIGN.md 11.1, Fix 4) -->
+      <div class="flex md:hidden items-center gap-3 w-full">
+        <label for="catalog-sort-mobile" class="text-[14px] font-medium text-[var(--color-muted)] shrink-0">
+          Сортировка
+        </label>
+        <div class="relative flex-1">
+          <select
+            id="catalog-sort-mobile"
+            class="w-full h-[48px] pl-3.5 pr-10 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] text-[16px] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none transition-colors appearance-none cursor-pointer"
+          >
+            <option value="recent">Недавно</option>
+            <option value="title">По названию</option>
+            <option value="author">По автору</option>
+          </select>
+          <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[var(--color-muted)]">
+            <ChevronDown class="w-4 h-4 stroke-[2]" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Active Tag Banner (< 1024px, DESIGN.md 11.1, Fix 7) -->
+    <div
+      id="mobile-active-genre-banner"
+      class="hidden lg:hidden mb-6 p-2.5 sm:p-3 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] flex items-center justify-between gap-3"
+    >
+      <div class="flex items-center gap-2 min-w-0 pl-1">
+        <span class="text-[14px] text-[var(--color-muted)] shrink-0">Ярлык:</span>
+        <span id="mobile-active-genre-name" class="text-[15px] font-medium text-[var(--color-heading)] truncate"></span>
+      </div>
+      <button
+        type="button"
+        id="mobile-reset-genre-btn"
+        class="min-h-[44px] min-w-[44px] px-3 py-2 rounded-[var(--radius-control)] text-[14px] font-medium text-[var(--color-primary)] hover:bg-[var(--color-hover-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] transition-colors cursor-pointer shrink-0 flex items-center justify-center gap-1.5"
+        aria-label="Сбросить выбранный ярлык"
+      >
+        <X class="w-4 h-4 stroke-[2]" />
+        <span>Сбросить ярлык</span>
+      </button>
     </div>
 
     <!-- Accessible Live Announcement Region (DESIGN.md 8.1) -->
@@ -142,6 +192,12 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
 <!-- Client Catalog Controller -->
 <script>
+  import { normalize, matchesFilter, compareBooks } from '../utils/catalog.js';
+
+  // Module-scoped listeners for clean teardown across page transitions (Fix 11)
+  let popStateListener: (() => void) | null = null;
+  let keyDownListener: ((e: KeyboardEvent) => void) | null = null;
+
   function initCatalogController() {
     const searchInput = document.getElementById('catalog-search') as HTMLInputElement | null;
     const searchClearBtn = document.getElementById('search-clear-btn');
@@ -152,8 +208,15 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     const catalogGrid = document.getElementById('catalog-grid');
     const liveFeedback = document.getElementById('catalog-live-feedback');
 
-    // Sort buttons
+    // Sorting elements (Fix 4)
+    const sortRadioGroup = document.getElementById('catalog-sort-radiogroup');
     const sortBtns = document.querySelectorAll('.sort-btn');
+    const mobileSortSelect = document.getElementById('catalog-sort-mobile') as HTMLSelectElement | null;
+
+    // Mobile active genre banner (Fix 7)
+    const mobileActiveGenreBanner = document.getElementById('mobile-active-genre-banner');
+    const mobileActiveGenreName = document.getElementById('mobile-active-genre-name');
+    const mobileResetGenreBtn = document.getElementById('mobile-reset-genre-btn');
 
     // Sidebar tag buttons
     const navGenreBtns = document.querySelectorAll('.nav-genre-btn');
@@ -165,8 +228,18 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     let currentSort = 'recent'; // recent, title, author
     let searchDebounceTimer: number | undefined;
 
-    function normalize(text: string): string {
-      return text.toLowerCase().replace(/ё/g, 'е').trim();
+    function getGenreDisplayName(genreSlug: string): string {
+      if (!genreSlug) return '';
+      for (const btn of Array.from(navGenreBtns)) {
+        const btnGenre = normalize((btn as HTMLElement).dataset.navGenre || '');
+        if (btnGenre === genreSlug) {
+          const nameSpan = btn.querySelector('span.truncate');
+          if (nameSpan && nameSpan.textContent) {
+            return nameSpan.textContent.trim();
+          }
+        }
+      }
+      return genreSlug.charAt(0).toUpperCase() + genreSlug.slice(1);
     }
 
     function updateActiveNavUI() {
@@ -195,34 +268,36 @@ const sortedBooks = [...allBooks].sort((a, b) => {
           iconWrap?.classList.remove('text-[var(--color-on-primary)]');
         }
       });
+
+      // Update mobile active tag banner (DESIGN.md 11.1, Fix 7)
+      if (mobileActiveGenreBanner && mobileActiveGenreName) {
+        if (selectedGenre) {
+          mobileActiveGenreName.textContent = getGenreDisplayName(selectedGenre);
+          mobileActiveGenreBanner.classList.remove('hidden');
+        } else {
+          mobileActiveGenreBanner.classList.add('hidden');
+          mobileActiveGenreName.textContent = '';
+        }
+      }
     }
 
     function applyFilterAndSort() {
       const gridItems = Array.from(document.querySelectorAll('#catalog-grid .book-item')) as HTMLElement[];
       let visibleCount = 0;
 
-      // Filter grid items
+      // Filter grid items using matchesFilter from catalog.js (Fix 1 part 2)
       gridItems.forEach((el) => {
-        const title = normalize(el.dataset.title || '');
-        const author = normalize(el.dataset.author || '');
-        const isbn = normalize(el.dataset.isbn || '');
-        const genres = normalize(el.dataset.genres || '');
+        const isVisible = matchesFilter(
+          {
+            title: el.dataset.title,
+            author: el.dataset.author,
+            isbn: el.dataset.isbn,
+            genres: el.dataset.genres,
+          },
+          searchQuery,
+          selectedGenre
+        );
 
-        let matchesSearch = true;
-        if (searchQuery) {
-          const cleanQuery = searchQuery.replace(/^isbn[:\s]*/i, '').replace(/[-\s\u2010-\u2015]/g, '');
-          const queryWords = searchQuery.split(/\s+/).filter(Boolean);
-          const matchesAllWords = queryWords.every((word) => title.includes(word) || author.includes(word));
-          matchesSearch = matchesAllWords || (cleanQuery.length > 0 && isbn.includes(cleanQuery));
-        }
-
-        let matchesGenre = true;
-        if (selectedGenre) {
-          const itemGenres = genres.split(',').map((g) => g.trim());
-          matchesGenre = itemGenres.includes(selectedGenre);
-        }
-
-        const isVisible = matchesSearch && matchesGenre;
         if (isVisible) {
           el.style.display = '';
           visibleCount++;
@@ -231,40 +306,9 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         }
       });
 
-      // Sorting
+      // Sorting using compareBooks from catalog.js (Fix 1 part 2)
       if (catalogGrid) {
-        gridItems.sort((a, b) => {
-          if (currentSort === 'title') {
-            const titleDiff = (a.dataset.title || '').localeCompare(b.dataset.title || '', 'ru');
-            if (titleDiff !== 0) return titleDiff;
-            const authorDiff = (a.dataset.author || '').localeCompare(b.dataset.author || '', 'ru');
-            if (authorDiff !== 0) return authorDiff;
-            return (a.dataset.id || '').localeCompare(b.dataset.id || '');
-          } else if (currentSort === 'author') {
-            const authorA = (a.dataset.author || '').trim();
-            const authorB = (b.dataset.author || '').trim();
-            if (!authorA && authorB) return 1;
-            if (authorA && !authorB) return -1;
-            const authorDiff = authorA.localeCompare(authorB, 'ru');
-            if (authorDiff !== 0) return authorDiff;
-            const titleDiff = (a.dataset.title || '').localeCompare(b.dataset.title || '', 'ru');
-            if (titleDiff !== 0) return titleDiff;
-            return (a.dataset.id || '').localeCompare(b.dataset.id || '');
-          } else {
-            // "recent" mode: sort by date added descending (DESIGN.md 8.2)
-            const addedA = parseInt(a.dataset.added || '0', 10);
-            const addedB = parseInt(b.dataset.added || '0', 10);
-            if (addedB !== addedA) {
-              return addedB - addedA;
-            }
-            const yearA = parseInt(a.dataset.year || '0', 10);
-            const yearB = parseInt(b.dataset.year || '0', 10);
-            if (yearB !== yearA) {
-              return yearB - yearA;
-            }
-            return (a.dataset.title || '').localeCompare(b.dataset.title || '', 'ru');
-          }
-        });
+        gridItems.sort((a, b) => compareBooks(a.dataset, b.dataset, currentSort));
         gridItems.forEach((item) => catalogGrid.appendChild(item));
       }
 
@@ -351,29 +395,71 @@ const sortedBooks = [...allBooks].sort((a, b) => {
       }
     });
 
-    // Sort buttons event binding
+    // Sorting state updater with roving tabindex and mobile select sync (Fix 4)
+    function setSort(sortVal: string, moveFocus = false) {
+      currentSort = sortVal;
+
+      if (mobileSortSelect && mobileSortSelect.value !== sortVal) {
+        mobileSortSelect.value = sortVal;
+      }
+
+      sortBtns.forEach((b) => {
+        const btnEl = b as HTMLButtonElement;
+        const isCurrent = btnEl.dataset.sort === currentSort;
+        if (isCurrent) {
+          btnEl.classList.add('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]', 'shadow-xs');
+          btnEl.classList.remove('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
+          btnEl.setAttribute('aria-checked', 'true');
+          btnEl.setAttribute('tabindex', '0');
+          if (moveFocus) {
+            btnEl.focus();
+          }
+        } else {
+          btnEl.classList.remove('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]', 'shadow-xs');
+          btnEl.classList.add('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
+          btnEl.setAttribute('aria-checked', 'false');
+          btnEl.setAttribute('tabindex', '-1');
+        }
+      });
+
+      applyFilterAndSort();
+    }
+
+    // Sort buttons click event binding
     sortBtns.forEach((btn) => {
       btn.addEventListener('click', () => {
         const sortVal = (btn as HTMLElement).dataset.sort || 'recent';
-        currentSort = sortVal;
-
-        sortBtns.forEach((b) => {
-          const isCurrent = (b as HTMLElement).dataset.sort === currentSort;
-          if (isCurrent) {
-            b.classList.add('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]', 'shadow-xs');
-            b.classList.remove('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
-            b.setAttribute('aria-pressed', 'true');
-          } else {
-            b.classList.remove('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]', 'shadow-xs');
-            b.classList.add('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
-            b.setAttribute('aria-pressed', 'false');
-          }
-        });
-
-        applyFilterAndSort();
+        setSort(sortVal, false);
       });
     });
 
+    // Arrow keys roving tabindex on desktop radiogroup (Fix 4)
+    sortRadioGroup?.addEventListener('keydown', (e) => {
+      const btnArray = Array.from(sortBtns) as HTMLButtonElement[];
+      const currentIndex = btnArray.findIndex((b) => b.dataset.sort === currentSort);
+      if (currentIndex === -1) return;
+
+      let newIndex = -1;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        newIndex = (currentIndex + 1) % btnArray.length;
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        newIndex = (currentIndex - 1 + btnArray.length) % btnArray.length;
+      }
+
+      if (newIndex !== -1) {
+        e.preventDefault();
+        const targetSort = btnArray[newIndex].dataset.sort || 'recent';
+        setSort(targetSort, true);
+      }
+    });
+
+    // Mobile select change event (Fix 4)
+    mobileSortSelect?.addEventListener('change', (e) => {
+      const val = (e.target as HTMLSelectElement).value;
+      setSort(val, false);
+    });
+
+    // Synchronize URL genre query param (Fix 12)
     function syncUrlGenre() {
       const url = new URL(window.location.href);
       if (selectedGenre) {
@@ -381,7 +467,10 @@ const sortedBooks = [...allBooks].sort((a, b) => {
       } else {
         url.searchParams.delete('genre');
       }
-      window.history.pushState({}, '', url.pathname + url.search);
+      const newSearch = url.search || '';
+      if (window.location.search !== newSearch) {
+        window.history.pushState({}, '', url.pathname + newSearch);
+      }
     }
 
     // Reset filters
@@ -403,6 +492,13 @@ const sortedBooks = [...allBooks].sort((a, b) => {
       }
       resetAllFilters();
       searchInput?.focus();
+    });
+
+    // Mobile reset genre button (resets only genre, preserving search and sort, Fix 7)
+    mobileResetGenreBtn?.addEventListener('click', () => {
+      selectedGenre = '';
+      syncUrlGenre();
+      applyFilterAndSort();
     });
 
     // Sidebar tags binding
@@ -440,35 +536,62 @@ const sortedBooks = [...allBooks].sort((a, b) => {
       });
     });
 
-    // Listen to browser back/forward buttons (idempotent registration)
+    // Listen to browser back/forward buttons
     function onPopState() {
       const paramGenre = new URLSearchParams(window.location.search).get('genre');
       selectedGenre = paramGenre ? normalize(paramGenre) : '';
       applyFilterAndSort();
     }
-    window.removeEventListener('popstate', onPopState);
-    window.addEventListener('popstate', onPopState);
+    if (popStateListener) {
+      window.removeEventListener('popstate', popStateListener);
+    }
+    popStateListener = onPopState;
+    window.addEventListener('popstate', popStateListener);
 
-    // Keyboard shortcut '/' to focus search without hijacking system combinations
+    // Keyboard shortcuts: '/' and Cmd+K / Ctrl+K (Fix 9)
     function onKeyDown(e: KeyboardEvent) {
-      if (
-        e.key === '/' &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        !e.altKey &&
-        document.activeElement !== searchInput &&
-        !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')
-      ) {
+      if (e.defaultPrevented || e.isComposing) return;
+
+      const isCmdK = (e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey) && !e.altKey;
+      const isSlash = e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey;
+
+      if (isCmdK) {
         e.preventDefault();
         searchInput?.focus();
+        searchInput?.select();
+        return;
+      }
+
+      if (isSlash) {
+        const tag = document.activeElement?.tagName || '';
+        const isEditable = (document.activeElement as HTMLElement)?.isContentEditable;
+        if (document.activeElement !== searchInput && !['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) && !isEditable) {
+          e.preventDefault();
+          searchInput?.focus();
+        }
       }
     }
-    window.removeEventListener('keydown', onKeyDown);
-    window.addEventListener('keydown', onKeyDown);
+    if (keyDownListener) {
+      window.removeEventListener('keydown', keyDownListener);
+    }
+    keyDownListener = onKeyDown;
+    window.addEventListener('keydown', keyDownListener);
 
     // Initial run
     applyFilterAndSort();
   }
+
+  // Teardown before page swap (Fix 11)
+  document.addEventListener('astro:before-swap', () => {
+    if (popStateListener) {
+      window.removeEventListener('popstate', popStateListener);
+      popStateListener = null;
+    }
+    if (keyDownListener) {
+      window.removeEventListener('keydown', keyDownListener);
+      keyDownListener = null;
+    }
+  });
 
   initCatalogController();
   document.addEventListener('astro:after-swap', initCatalogController);
