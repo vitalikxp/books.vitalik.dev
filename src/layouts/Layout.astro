@@ -164,7 +164,7 @@ const genres = Array.from(genreCounts.entries())
       </div>
 
       <!-- Main Catalog & Pages Area -->
-      <main id="main-content" class="flex-1 min-w-0 bg-[var(--color-page)]">
+      <main id="main-content" tabindex="-1" class="flex-1 min-w-0 bg-[var(--color-page)] focus:outline-none">
         <slot />
       </main>
     </div>

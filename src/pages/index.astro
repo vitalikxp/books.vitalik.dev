@@ -14,15 +14,17 @@ import {
 
 const allBooks = await getCollection('books');
 
-// Sort by year descending by default (from newer to older editions)
+// Sort by date added descending by default (DESIGN.md 8.2), with year and title as tie-breakers
 const sortedBooks = [...allBooks].sort((a, b) => {
+  const addedA = a.data.addedAt ? new Date(a.data.addedAt).getTime() : 0;
+  const addedB = b.data.addedAt ? new Date(b.data.addedAt).getTime() : 0;
+  const addedDiff = addedB - addedA;
+  if (addedDiff !== 0) return addedDiff;
   const yearA = a.data.year || 0;
   const yearB = b.data.year || 0;
   if (yearB !== yearA) {
     return yearB - yearA;
   }
-  const addedDiff = new Date(b.data.addedAt).getTime() - new Date(a.data.addedAt).getTime();
-  if (addedDiff !== 0) return addedDiff;
   return a.data.title.localeCompare(b.data.title, 'ru');
 });
 ---
@@ -50,7 +52,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         <button
           type="button"
           id="search-clear-btn"
-          class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-[var(--color-placeholder)] hover:text-[var(--color-text)] cursor-pointer"
+          class="hidden absolute inset-y-0 right-0 w-12 flex items-center justify-center text-[var(--color-placeholder)] hover:text-[var(--color-text)] cursor-pointer"
           aria-label="Очистить поиск"
         >
           <X class="w-5 h-5 stroke-[1.8]" />
@@ -242,16 +244,16 @@ const sortedBooks = [...allBooks].sort((a, b) => {
             if (titleDiff !== 0) return titleDiff;
             return (a.dataset.id || '').localeCompare(b.dataset.id || '');
           } else {
-            // "recent" mode: sort by publication year descending (newest to oldest)
-            const yearA = parseInt(a.dataset.year || '0', 10);
-            const yearB = parseInt(b.dataset.year || '0', 10);
-            if (yearB !== yearA) {
-              return yearB - yearA;
-            }
+            // "recent" mode: sort by date added descending (DESIGN.md 8.2)
             const addedA = parseInt(a.dataset.added || '0', 10);
             const addedB = parseInt(b.dataset.added || '0', 10);
             if (addedB !== addedA) {
               return addedB - addedA;
+            }
+            const yearA = parseInt(a.dataset.year || '0', 10);
+            const yearB = parseInt(b.dataset.year || '0', 10);
+            if (yearB !== yearA) {
+              return yearB - yearA;
             }
             return (a.dataset.title || '').localeCompare(b.dataset.title || '', 'ru');
           }

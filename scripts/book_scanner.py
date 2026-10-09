@@ -6,6 +6,7 @@ then creates a markdown entry and saves the cover image.
 """
 
 import argparse
+import html
 import json
 import os
 import re
@@ -246,7 +247,7 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
 
     desc = (book_info.get('description') or '').strip()
     if desc:
-        desc = re.sub(r'<[^>]+>', '', desc)
+        desc = html.unescape(re.sub(r'<[^>]+>', '', desc)).strip()
     else:
         desc = f"Экземпляр бумажной книги «{final_title}» ({final_author})."
 
