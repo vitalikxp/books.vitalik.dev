@@ -35,7 +35,7 @@ if (data.status === 'reading') {
 ---
 
 <Layout title={`${data.title} — ${data.author}`}>
-  <div class="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 pt-6 sm:pt-8 lg:pt-10 pb-16">
+  <div class="max-w-[1200px] mx-auto px-5 sm:px-8 lg:px-10 pt-6 sm:pt-8 lg:pt-10 pb-16">
     <!-- Back to catalog button -->
     <div class="mb-8">
       <a 
@@ -86,14 +86,14 @@ if (data.status === 'reading') {
           )}
         </div>
 
-        <!-- Title in Lora serif -->
-        <h1 class="font-['Lora'] text-[32px] sm:text-[44px] lg:text-[48px] font-medium leading-[1.16] text-[var(--color-heading)] tracking-[-0.015em] mb-2">
+        <!-- Title in Inter sans -->
+        <h1 class="font-sans text-[32px] sm:text-[44px] lg:text-[48px] font-semibold leading-[1.16] text-[var(--color-heading)] tracking-[-0.015em] mb-2">
           {data.title}
         </h1>
 
         <!-- Original Title if present -->
         {data.originalTitle && (
-          <p class="font-['Lora'] italic text-[18px] text-[var(--color-muted)] mb-3">
+          <p class="font-sans italic text-[18px] text-[var(--color-muted)] mb-3">
             {data.originalTitle}
           </p>
         )}
@@ -146,7 +146,7 @@ if (data.status === 'reading') {
 
         <!-- Literary Annotation & Markdown Content -->
         <div class="pt-6 border-t border-[var(--color-line)]">
-          <h2 class="font-['Lora'] text-[22px] font-medium text-[var(--color-heading)] mb-4">
+          <h2 class="font-sans text-[22px] font-semibold text-[var(--color-heading)] mb-4">
             О книге и заметки
           </h2>
           <div class="text-[16px] leading-[1.65] text-[var(--color-text)] font-normal space-y-4 max-w-none">

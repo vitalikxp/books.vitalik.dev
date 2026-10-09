@@ -6,7 +6,7 @@
  * @returns {string}
  */
 export function normalize(text) {
-  return (text || '').toLowerCase().replace(/ё/g, 'е').trim();
+  return String(text ?? '').toLowerCase().replace(/ё/g, 'е').trim();
 }
 
 /**
@@ -27,8 +27,8 @@ export function matchesSearch(book, searchQuery) {
   const author = normalize(book.author || '');
   const isbn = normalize(book.isbn || '');
 
-  const cleanIsbn = isbn.replace(/^isbn[:\s]*/i, '').replace(/[-\s\u2010-\u2015\u2212]/g, '');
-  const cleanQuery = normalizedQuery.replace(/^isbn[:\s]*/i, '').replace(/[-\s\u2010-\u2015\u2212]/g, '');
+  const cleanIsbn = isbn.replace(/^isbn(?:-?1[03])?[:\s]*/i, '').replace(/[-\s\u2010-\u2015\u2212]/g, '');
+  const cleanQuery = normalizedQuery.replace(/^isbn(?:-?1[03])?[:\s]*/i, '').replace(/[-\s\u2010-\u2015\u2212]/g, '');
   const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
 
   const matchesAllWords = queryWords.length > 0 && queryWords.every(
@@ -51,12 +51,21 @@ export function matchesGenre(book, selectedGenre) {
   const normalizedGenre = normalize(selectedGenre);
   if (!normalizedGenre) return true;
 
-  const genresRaw = Array.isArray(book.genres)
-    ? book.genres.join(',')
-    : (book.genres || '');
-  const normalizedGenres = normalize(genresRaw);
-  const itemGenres = normalizedGenres.split(',').map((g) => g.trim());
-
+  let itemGenres = [];
+  if (Array.isArray(book.genres)) {
+    itemGenres = book.genres.map((g) => normalize(g));
+  } else if (typeof book.genres === 'string') {
+    const trimmed = book.genres.trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        itemGenres = JSON.parse(trimmed).map((g) => normalize(g));
+      } catch {
+        itemGenres = normalize(trimmed).split(',').map((g) => g.trim());
+      }
+    } else {
+      itemGenres = normalize(trimmed).split(',').map((g) => g.trim());
+    }
+  }
   return itemGenres.includes(normalizedGenre);
 }
 
@@ -73,6 +82,14 @@ export function matchesFilter(book, searchQuery, selectedGenre) {
   return matchesSearch(book, searchQuery) && matchesGenre(book, selectedGenre);
 }
 
+function parseDateValue(val) {
+  if (typeof val === 'number') return Number.isFinite(val) ? val : 0;
+  const num = Number(val);
+  if (Number.isFinite(num)) return num;
+  const parsed = Date.parse(String(val || ''));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 /**
  * Sort comparator for catalog books.
  * Supported modes: 'recent', 'title', 'author'.
@@ -87,9 +104,9 @@ export function compareBooks(a, b, sortMode = 'recent') {
   b = b || {};
 
   if (sortMode === 'title') {
-    const titleDiff = (a.title || '').localeCompare(b.title || '', 'ru');
+    const titleDiff = (a.title || '').localeCompare(b.title || '', 'ru', { sensitivity: 'accent' });
     if (titleDiff !== 0) return titleDiff;
-    const authorDiff = (a.author || '').localeCompare(b.author || '', 'ru');
+    const authorDiff = (a.author || '').localeCompare(b.author || '', 'ru', { sensitivity: 'accent' });
     if (authorDiff !== 0) return authorDiff;
     return (a.id || '').localeCompare(b.id || '');
   }
@@ -99,18 +116,16 @@ export function compareBooks(a, b, sortMode = 'recent') {
     const authorB = (b.author || '').trim();
     if (!authorA && authorB) return 1;
     if (authorA && !authorB) return -1;
-    const authorDiff = authorA.localeCompare(authorB, 'ru');
+    const authorDiff = authorA.localeCompare(authorB, 'ru', { sensitivity: 'accent' });
     if (authorDiff !== 0) return authorDiff;
-    const titleDiff = (a.title || '').localeCompare(b.title || '', 'ru');
+    const titleDiff = (a.title || '').localeCompare(b.title || '', 'ru', { sensitivity: 'accent' });
     if (titleDiff !== 0) return titleDiff;
     return (a.id || '').localeCompare(b.id || '');
   }
 
   // "recent" mode: sort by date added descending (DESIGN.md 8.2), tie-breakers: year desc, title asc, id asc
-  const parsedAddedA = typeof a.added === 'number' ? a.added : parseInt(String(a.added || 0), 10);
-  const addedA = Number.isFinite(parsedAddedA) ? parsedAddedA : 0;
-  const parsedAddedB = typeof b.added === 'number' ? b.added : parseInt(String(b.added || 0), 10);
-  const addedB = Number.isFinite(parsedAddedB) ? parsedAddedB : 0;
+  const addedA = parseDateValue(a.added);
+  const addedB = parseDateValue(b.added);
   if (addedB !== addedA) return addedB - addedA;
 
   const parsedYearA = typeof a.year === 'number' ? a.year : parseInt(String(a.year || 0), 10);
@@ -119,7 +134,7 @@ export function compareBooks(a, b, sortMode = 'recent') {
   const yearB = Number.isFinite(parsedYearB) ? parsedYearB : 0;
   if (yearB !== yearA) return yearB - yearA;
 
-  const titleDiff = (a.title || '').localeCompare(b.title || '', 'ru');
+  const titleDiff = (a.title || '').localeCompare(b.title || '', 'ru', { sensitivity: 'accent' });
   if (titleDiff !== 0) return titleDiff;
   return (a.id || '').localeCompare(b.id || '');
 }

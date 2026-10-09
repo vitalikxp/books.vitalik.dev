@@ -115,15 +115,15 @@ class TestImageValidation(unittest.TestCase):
     """Tests for is_valid_image magic numbers and HTML rejection."""
 
     def test_valid_jpeg(self):
-        jpeg_header = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00"
+        jpeg_header = b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00" + b"\x00" * 20
         self.assertTrue(is_valid_image(jpeg_header))
 
     def test_valid_png(self):
-        png_header = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
+        png_header = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR" + b"\x00" * 20
         self.assertTrue(is_valid_image(png_header))
 
     def test_valid_webp(self):
-        webp_header = b"RIFF\x24\x00\x00\x00WEBPVP8 "
+        webp_header = b"RIFF\x24\x00\x00\x00WEBPVP8 " + b"\x00" * 20
         self.assertTrue(is_valid_image(webp_header))
 
     def test_reject_html_responses(self):
@@ -144,6 +144,8 @@ class TestImageValidation(unittest.TestCase):
         self.assertFalse(is_valid_image(None))
         self.assertFalse(is_valid_image(b"Plain text error message"))
         self.assertFalse(is_valid_image(b"\x00\x01\x02\x03\x04\x05"))
+        # Header shorter than 32 bytes is rejected
+        self.assertFalse(is_valid_image(b"\xff\xd8\xff\xe0" + b"\x00" * 10))
 
 
 class TestFetchJson(unittest.TestCase):
@@ -395,6 +397,17 @@ class TestSearchGoogleBooks(unittest.TestCase):
             "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9785041100575&maxResults=3&langRestrict=ru"
         )
 
+        # ISBN-13: and ISBN-10: prefixes
+        search_google_books("", isbn="ISBN-13: 978-5-04-110057-5")
+        mock_fetch_json.assert_called_with(
+            "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9785041100575&maxResults=3&langRestrict=ru"
+        )
+
+        search_google_books("", isbn="ISBN-10: 5-04-110057-5")
+        mock_fetch_json.assert_called_with(
+            "https://www.googleapis.com/books/v1/volumes?q=isbn%3A5041100575&maxResults=3&langRestrict=ru"
+        )
+
 
 class TestSearchOpenLibrary(unittest.TestCase):
     """Tests for search_open_library function."""
@@ -418,6 +431,17 @@ class TestSearchOpenLibrary(unittest.TestCase):
         search_open_library("", isbn="978−5−04−110057−5")
         mock_fetch_json.assert_called_with(
             "https://openlibrary.org/search.json?q=9785041100575&limit=3"
+        )
+
+        # ISBN-13: and ISBN-10: prefixes
+        search_open_library("", isbn="ISBN-13: 978-5-04-110057-5")
+        mock_fetch_json.assert_called_with(
+            "https://openlibrary.org/search.json?q=9785041100575&limit=3"
+        )
+
+        search_open_library("", isbn="ISBN-10: 5-04-110057-5")
+        mock_fetch_json.assert_called_with(
+            "https://openlibrary.org/search.json?q=5041100575&limit=3"
         )
 
     @patch("scripts.book_scanner.fetch_json")
@@ -774,6 +798,57 @@ class TestAddBook(unittest.TestCase):
         parts = raw.split("---")
         fm = yaml.safe_load(parts[1])
         self.assertEqual(fm["cover"], "/covers/default-book.svg")
+
+    @patch("scripts.book_scanner.search_google_books")
+    def test_add_book_language_none_fallback_to_ru(self, mock_search):
+        mock_search.return_value = {
+            "title": "Книга без языка",
+            "author": "Автор",
+            "year": 2024,
+            "publisher": "Издательство",
+            "isbn": "9781234567890",
+            "pages": 100,
+            "genres": ["Тест"],
+            "language": None,
+            "description": "Описание",
+            "cover_url": None,
+        }
+
+        success = add_book(query="Книга без языка", force=True)
+        self.assertTrue(success)
+        expected_md = self.books_dir / "avtor-kniga-bez-yazyka.md"
+        self.assertTrue(expected_md.exists())
+
+        raw = expected_md.read_text(encoding="utf-8")
+        parts = raw.split("---")
+        fm = yaml.safe_load(parts[1])
+        self.assertEqual(fm["language"], "ru")
+
+    def test_add_book_atomic_write_and_nonexistent_books_dir(self):
+        import shutil
+        if self.books_dir.exists():
+            shutil.rmtree(self.books_dir)
+        self.assertFalse(self.books_dir.exists())
+
+        success = add_book(
+            title="Новая книга в новой директории",
+            author="Автор",
+            year=2024,
+            custom_cover="/covers/default-book.svg",
+        )
+        self.assertTrue(success)
+        self.assertTrue(self.books_dir.exists())
+        expected_md = self.books_dir / "avtor-novaya-kniga-v-novoy-direktorii.md"
+        self.assertTrue(expected_md.exists())
+
+        # Temporary .tmp file should not remain after atomic replace
+        tmp_md = expected_md.with_name(f"{expected_md.name}.tmp")
+        self.assertFalse(tmp_md.exists())
+
+        raw = expected_md.read_text(encoding="utf-8")
+        parts = raw.split("---")
+        fm = yaml.safe_load(parts[1])
+        self.assertEqual(fm["title"], "Новая книга в новой директории")
 
     @patch("scripts.book_scanner.add_book", return_value=True)
     def test_cli_force_argument_handling(self, mock_add_book):

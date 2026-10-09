@@ -16,7 +16,7 @@ const data = book.data;
   data-title={data.title.toLowerCase()}
   data-author={data.author.toLowerCase()}
   data-isbn={(data.isbn || '').replace(/^isbn[:\s]*/i, '').replace(/[-\s\u2010-\u2015\u2212]/g, '').toLowerCase()}
-  data-genres={data.genres.map((g: string) => g.toLowerCase()).join(',')}
+  data-genres={JSON.stringify(data.genres.map((g: string) => g.toLowerCase()))}
   data-added={new Date(data.addedAt).getTime()}
   data-year={data.year || 0}
 >
@@ -26,7 +26,7 @@ const data = book.data;
       href={`/books/${book.id}`}
       tabindex="-1"
       aria-hidden="true"
-      class="block relative max-w-full max-h-full book-cover-container transition-transform duration-150 focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+      class="block relative max-w-full max-h-full book-cover-container transition-transform duration-150 focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-3"
     >
       <img 
         src={data.cover} 

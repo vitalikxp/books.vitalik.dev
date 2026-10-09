@@ -27,6 +27,12 @@ test('1. Строковая нормализация (normalize)', async (t) => 
     assert.equal(normalize(null), '');
     assert.equal(normalize(undefined), '');
   });
+
+  await t.test('корректно приводит числа и другие нестроковые типы (включая 0 и 12345)', () => {
+    assert.equal(normalize(12345), '12345');
+    assert.equal(normalize(0), '0');
+    assert.equal(normalize(false), 'false');
+  });
 });
 
 test('2. Мультисловный поиск по названию и автору (matchesSearch)', async (t) => {
@@ -114,6 +120,23 @@ test('3. Поиск по ISBN (очистка дефисов и пробелов
     assert.equal(matchesSearch(book, 'ISBN: 978–5–04–110057–5'), true);
   });
 
+  await t.test('находит книгу по запросу с префиксами ISBN-13 и ISBN-10', () => {
+    assert.equal(matchesSearch(book, 'ISBN-13: 978-5-04-110057-5'), true);
+    assert.equal(matchesSearch(book, 'isbn-13: 978-5-04-110057-5'), true);
+    assert.equal(matchesSearch(book, 'ISBN13: 978-5-04-110057-5'), true);
+    assert.equal(matchesSearch(book, 'isbn13 9785041100575'), true);
+
+    const book10 = {
+      title: 'Computer Science для программиста-самоучки',
+      author: 'Кори Альтхофф',
+      isbn: '5-04-110057-5',
+    };
+    assert.equal(matchesSearch(book10, 'ISBN-10: 5-04-110057-5'), true);
+    assert.equal(matchesSearch(book10, 'isbn-10: 5-04-110057-5'), true);
+    assert.equal(matchesSearch(book10, 'ISBN10: 5-04-110057-5'), true);
+    assert.equal(matchesSearch(book10, 'isbn10 5041100575'), true);
+  });
+
   await t.test('возвращает false при несовпадающем ISBN', () => {
     assert.equal(matchesSearch(book, '9781234567890'), false);
   });
@@ -161,6 +184,27 @@ test('4. Фильтрация по ярлыкам (matchesGenre)', async (t) => 
     assert.equal(matchesGenre(datasetBook, 'программирование'), false);
     assert.equal(matchesFilter(datasetBook, 'робин', 'типографика'), true);
     assert.equal(matchesFilter(datasetBook, 'толстой', 'типографика'), false);
+  });
+
+  await t.test('корректно фильтрует жанры, содержащие запятые в названии', () => {
+    const bookWithCommaGenre = {
+      title: 'Энциклопедия',
+      genres: ['Наука, образование', 'Справочники'],
+    };
+    assert.equal(matchesGenre(bookWithCommaGenre, 'Наука, образование'), true);
+    assert.equal(matchesGenre(bookWithCommaGenre, 'наука, образование'), true);
+    assert.equal(matchesGenre(bookWithCommaGenre, 'Наука'), false);
+    assert.equal(matchesGenre(bookWithCommaGenre, 'образование'), false);
+  });
+
+  await t.test('поддерживает сериализованный JSON-массив жанров из data-genres', () => {
+    const bookJsonGenres = {
+      title: 'Научная книга',
+      genres: JSON.stringify(['Наука, образование', 'ИТ']),
+    };
+    assert.equal(matchesGenre(bookJsonGenres, 'Наука, образование'), true);
+    assert.equal(matchesGenre(bookJsonGenres, 'ИТ'), true);
+    assert.equal(matchesGenre(bookJsonGenres, 'Наука'), false);
   });
 });
 
@@ -269,6 +313,17 @@ test('5. Компараторы сортировки (compareBooks)', async (t) 
 
     const sortedAuthor = [...datasetBooks].sort((a, b) => compareBooks(a, b, 'author'));
     assert.deepEqual(sortedAuthor.map((b) => b.id), ['b-1', 'b-2', 'b-3']); // Керниган -> Кормен -> Мартин
+  });
+
+  await t.test('сортировка «recent» корректно сравнивает ISO-строки дат (2026-01-15 vs 2026-11-20)', () => {
+    const isoBooks = [
+      { id: 'b-jan', title: 'Январская книга', added: '2026-01-15', year: 2026 },
+      { id: 'b-nov', title: 'Ноябрьская книга', added: '2026-11-20', year: 2026 },
+      { id: 'b-mar', title: 'Мартовская книга', added: '2026-03-10', year: 2026 },
+    ];
+    const sorted = [...isoBooks].sort((a, b) => compareBooks(a, b, 'recent'));
+    // Убывающий порядок: 2026-11-20 -> 2026-03-10 -> 2026-01-15
+    assert.deepEqual(sorted.map((b) => b.id), ['b-nov', 'b-mar', 'b-jan']);
   });
 
   await t.test('тай-брейк по id при совпадающих названии и авторе', () => {

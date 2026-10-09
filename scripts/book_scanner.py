@@ -60,7 +60,7 @@ def fetch_json(url: str):
         return None
 
 def is_valid_image(data: bytes) -> bool:
-    if not data or len(data) == 0:
+    if not data or len(data) < 32:
         return False
     stripped = data.lstrip()
     if stripped.startswith(b'<') or stripped.lower().startswith(b'<!doctype'):
@@ -127,7 +127,7 @@ def download_image(url: str, dest_path: Path) -> bool:
         return False
 
 def search_google_books(query: str, isbn: str = None):
-    clean_isbn = re.sub(r'(?i)^isbn[:\s]*|[-\s\u2010-\u2015\u2212]', '', isbn or '')
+    clean_isbn = re.sub(r'(?i)^isbn(?:-?1[03])?[:\s]*|[-\s\u2010-\u2015\u2212]', '', isbn or '')
     q = f"isbn:{clean_isbn}" if clean_isbn else query
     encoded_q = urllib.parse.quote(q)
     url = f"https://www.googleapis.com/books/v1/volumes?q={encoded_q}&maxResults=3&langRestrict=ru"
@@ -182,7 +182,7 @@ def search_google_books(query: str, isbn: str = None):
     }
 
 def search_open_library(query: str, isbn: str = None):
-    clean_isbn = re.sub(r'(?i)^isbn[:\s]*|[-\s\u2010-\u2015\u2212]', '', isbn or '')
+    clean_isbn = re.sub(r'(?i)^isbn(?:-?1[03])?[:\s]*|[-\s\u2010-\u2015\u2212]', '', isbn or '')
     q = clean_isbn if clean_isbn else query
     encoded_q = urllib.parse.quote(q)
     url = f"https://openlibrary.org/search.json?q={encoded_q}&limit=3"
@@ -296,6 +296,7 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
                 print(f"[✓] Обложка сохранена в {cover_rel_path}")
 
     # Generate Markdown file
+    BOOKS_DIR.mkdir(parents=True, exist_ok=True)
     md_file = BOOKS_DIR / f"{slug}.md"
     year_str = f"year: {book_info['year']}\n" if book_info.get('year') else ""
     pub_str = f'publisher: {json.dumps(book_info["publisher"], ensure_ascii=False)}\n' if book_info.get('publisher') else ""
@@ -314,7 +315,7 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
     content = f"""---
 title: {json.dumps(final_title, ensure_ascii=False)}
 author: {json.dumps(final_author, ensure_ascii=False)}
-{year_str}{pub_str}{isbn_str}language: {json.dumps(book_info.get('language', 'ru'), ensure_ascii=False)}
+{year_str}{pub_str}{isbn_str}language: {json.dumps(book_info.get('language') or 'ru', ensure_ascii=False)}
 {pages_str}cover: {json.dumps(cover_rel_path, ensure_ascii=False)}
 {genres_yaml}status: {json.dumps(status, ensure_ascii=False)}
 {rating_str}addedAt: {date.today().isoformat()}
@@ -323,8 +324,10 @@ author: {json.dumps(final_author, ensure_ascii=False)}
 {desc}
 """
 
-    with open(md_file, 'w', encoding='utf-8') as f:
+    tmp_md = md_file.with_name(f"{md_file.name}.tmp")
+    with open(tmp_md, 'w', encoding='utf-8') as f:
         f.write(content)
+    tmp_md.replace(md_file)
     try:
         rel_md = md_file.relative_to(ROOT_DIR)
     except ValueError:

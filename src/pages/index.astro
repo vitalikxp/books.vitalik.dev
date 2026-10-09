@@ -39,7 +39,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 ---
 
 <Layout title="Каталог книг">
-  <div class="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 pt-5 sm:pt-8 pb-16">
+  <div class="max-w-[1200px] mx-auto px-5 sm:px-8 lg:px-10 pt-5 sm:pt-8 pb-16">
     <!-- Accessible hidden document H1 for screen readers -->
     <h1 class="sr-only">Каталог книг</h1>
 
@@ -56,7 +56,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
           id="catalog-search"
           placeholder="Название, автор или ISBN"
           autocomplete="off"
-          class="w-full h-[48px] pl-12 pr-12 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] text-[16px] text-[var(--color-text)] placeholder-[var(--color-placeholder)] focus:border-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-2 transition-colors"
+          class="w-full h-[48px] pl-12 pr-12 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] text-[16px] text-[var(--color-text)] placeholder-[var(--color-placeholder)] focus:border-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-3 transition-colors"
         />
         <button
           type="button"
@@ -118,7 +118,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         <div class="relative flex-1">
           <select
             id="catalog-sort-mobile"
-            class="w-full h-[48px] pl-3.5 pr-10 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] text-[16px] text-[var(--color-text)] focus:border-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-2 transition-colors appearance-none cursor-pointer"
+            class="w-full h-[48px] pl-3.5 pr-10 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] text-[16px] text-[var(--color-text)] focus:border-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-3 transition-colors appearance-none cursor-pointer"
           >
             <option value="recent">Недавно</option>
             <option value="title">По названию</option>
@@ -143,7 +143,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
       <button
         type="button"
         id="mobile-reset-genre-btn"
-        class="min-h-[44px] min-w-[44px] px-3 py-2 rounded-[var(--radius-control)] text-[14px] font-medium text-[var(--color-primary)] hover:bg-[var(--color-hover-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] transition-colors cursor-pointer shrink-0 flex items-center justify-center gap-1.5"
+        class="min-h-[44px] min-w-[44px] px-3 py-2 rounded-[var(--radius-control)] text-[14px] font-medium text-[var(--color-focus)] hover:text-[var(--color-focus)] hover:bg-[var(--color-hover-surface)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-3 transition-colors cursor-pointer shrink-0 flex items-center justify-center gap-1.5"
         aria-label="Сбросить выбранный ярлык"
       >
         <X class="w-4 h-4 stroke-[2]" />
@@ -180,7 +180,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         <button
           type="button"
           id="reset-all-btn"
-          class="h-[46px] px-6 rounded-[var(--radius-control)] bg-[var(--color-primary)] text-[var(--color-on-primary)] text-[15px] font-medium hover:bg-[var(--color-primary-hover)] transition-colors cursor-pointer inline-flex items-center gap-2"
+          class="h-[46px] px-6 rounded-[var(--radius-control)] bg-[var(--color-primary)] text-[var(--color-on-primary)] text-[15px] font-medium hover:bg-[var(--color-primary-hover)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-3 transition-colors cursor-pointer inline-flex items-center gap-2"
         >
           <RotateCcw class="w-4 h-4 stroke-[2]" />
           <span>Сбросить поиск и ярлыки</span>
@@ -194,9 +194,10 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 <script>
   import { normalize, matchesFilter, compareBooks } from '../utils/catalog.js';
 
-  // Module-scoped listeners for clean teardown across page transitions (Fix 11)
+  // Module-scoped listeners and timers for clean teardown across page transitions (Fix 11)
   let popStateListener: (() => void) | null = null;
   let keyDownListener: ((e: KeyboardEvent) => void) | null = null;
+  let searchDebounceTimer: number | undefined;
 
   function initCatalogController() {
     const searchInput = document.getElementById('catalog-search') as HTMLInputElement | null;
@@ -221,12 +222,21 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     // Sidebar tag buttons
     const navGenreBtns = document.querySelectorAll('.nav-genre-btn');
 
+    // Clear any previous debounce timer on re-init
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = undefined;
+    }
+
     // State
     let searchQuery = '';
+    if (searchInput && searchInput.value.trim()) {
+      searchQuery = normalize(searchInput.value);
+      searchClearBtn?.classList.remove('hidden');
+    }
     const initialGenre = new URLSearchParams(window.location.search).get('genre');
     let selectedGenre = initialGenre ? normalize(initialGenre) : '';
     let currentSort = 'recent'; // recent, title, author
-    let searchDebounceTimer: number | undefined;
 
     function getGenreDisplayName(genreSlug: string): string {
       if (!genreSlug) return '';
@@ -287,12 +297,19 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
       // Filter grid items using matchesFilter from catalog.js (Fix 1 part 2)
       gridItems.forEach((el) => {
+        let itemGenres: string | string[] = el.dataset.genres || '';
+        try {
+          if (typeof itemGenres === 'string' && itemGenres.startsWith('[')) {
+            itemGenres = JSON.parse(itemGenres);
+          }
+        } catch {}
+
         const isVisible = matchesFilter(
           {
             title: el.dataset.title,
             author: el.dataset.author,
             isbn: el.dataset.isbn,
-            genres: el.dataset.genres,
+            genres: itemGenres,
           },
           searchQuery,
           selectedGenre
@@ -312,18 +329,25 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         gridItems.forEach((item) => catalogGrid.appendChild(item));
       }
 
-      // Empty states handling
+      // Empty states handling (UI-CONV-07)
       if (emptyState) {
         if (visibleCount === 0) {
           emptyState.classList.remove('hidden');
           if (catalogGrid) catalogGrid.classList.add('hidden');
 
+          const resetBtnText = resetAllBtn?.querySelector('span');
           if (selectedGenre && !searchQuery) {
-            if (emptyTitle) emptyTitle.textContent = 'Книги не найдены';
+            if (emptyTitle) emptyTitle.textContent = 'В этом ярлыке пока нет книг';
             if (emptyDesc) emptyDesc.textContent = 'С выбранным ярлыком пока нет книг.';
+            if (resetBtnText) resetBtnText.textContent = 'Все книги';
+          } else if (!selectedGenre && searchQuery) {
+            if (emptyTitle) emptyTitle.textContent = 'Книги не найдены';
+            if (emptyDesc) emptyDesc.textContent = 'По вашему текущему запросу ничего не найдено.';
+            if (resetBtnText) resetBtnText.textContent = 'Очистить поиск';
           } else {
             if (emptyTitle) emptyTitle.textContent = 'Книги не найдены';
-            if (emptyDesc) emptyDesc.textContent = 'Попробуйте изменить поисковый запрос или сбросить фильтрацию.';
+            if (emptyDesc) emptyDesc.textContent = 'По вашему текущему запросу и ярлыку ничего не найдено.';
+            if (resetBtnText) resetBtnText.textContent = 'Сбросить поиск и ярлык';
           }
         } else {
           emptyState.classList.add('hidden');
@@ -481,21 +505,38 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     }
 
     resetAllBtn?.addEventListener('click', () => {
-      if (searchInput) {
-        if (searchDebounceTimer) {
-          clearTimeout(searchDebounceTimer);
-          searchDebounceTimer = undefined;
-        }
-        searchInput.value = '';
-        searchQuery = '';
-        searchClearBtn?.classList.add('hidden');
+      if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = undefined;
       }
-      resetAllFilters();
-      searchInput?.focus();
+
+      if (selectedGenre && !searchQuery) {
+        resetAllFilters();
+      } else if (!selectedGenre && searchQuery) {
+        if (searchInput) {
+          searchInput.value = '';
+          searchQuery = '';
+          searchClearBtn?.classList.add('hidden');
+          searchInput.focus();
+        }
+        applyFilterAndSort();
+      } else {
+        if (searchInput) {
+          searchInput.value = '';
+          searchQuery = '';
+          searchClearBtn?.classList.add('hidden');
+        }
+        resetAllFilters();
+        searchInput?.focus();
+      }
     });
 
     // Mobile reset genre button (resets only genre, preserving search and sort, Fix 7)
     mobileResetGenreBtn?.addEventListener('click', () => {
+      if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = undefined;
+      }
       selectedGenre = '';
       syncUrlGenre();
       applyFilterAndSort();
@@ -518,6 +559,11 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
         // Prevent page reload since we're already on index page
         e.preventDefault();
+
+        if (searchDebounceTimer) {
+          clearTimeout(searchDebounceTimer);
+          searchDebounceTimer = undefined;
+        }
 
         const genre = normalize((btn as HTMLElement).dataset.navGenre || '');
         if (selectedGenre === genre && genre !== '') {
@@ -543,6 +589,10 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
     // Listen to browser back/forward buttons
     function onPopState() {
+      if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = undefined;
+      }
       const paramGenre = new URLSearchParams(window.location.search).get('genre');
       selectedGenre = paramGenre ? normalize(paramGenre) : '';
       applyFilterAndSort();
@@ -588,6 +638,10 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
   // Teardown before page swap (Fix 11)
   document.addEventListener('astro:before-swap', () => {
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = undefined;
+    }
     if (popStateListener) {
       window.removeEventListener('popstate', popStateListener);
       popStateListener = null;

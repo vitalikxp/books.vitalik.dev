@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: var(--font-ui);
+}
+
 @layer base {
   :root {
     color-scheme: light;
@@ -245,7 +249,7 @@ body {
 /* Accessible focus ring */
 :focus-visible {
   outline: var(--focus-ring);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 
 /* Custom quiet scrollbar matching warm theme */

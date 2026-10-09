@@ -110,6 +110,7 @@ const genres = Array.from(genreMap.values())
     <!-- Skip link for keyboard accessibility -->
     <a 
       href="#main-content" 
+      id="skip-to-content"
       class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-[var(--color-primary)] focus:text-[var(--color-on-primary)] focus:rounded-lg focus:shadow-lg focus:outline-none"
     >
       Перейти к книгам
@@ -178,6 +179,9 @@ const genres = Array.from(genreMap.values())
     <script>
       let closeDrawerTimeout: number | undefined;
       let openDrawerTimeout: number | undefined;
+      let escapeKeyListener: ((e: KeyboardEvent) => void) | null = null;
+      let mediaQueryList: MediaQueryList | null = null;
+      let mediaQueryListener: ((e: MediaQueryListEvent) => void) | null = null;
 
       function initLayout() {
         const openDrawerBtn = document.getElementById('open-drawer-btn');
@@ -198,6 +202,7 @@ const genres = Array.from(genreMap.values())
           drawer.removeAttribute('inert');
           drawerOverlay.classList.remove('hidden');
           document.getElementById('main-content')?.setAttribute('inert', '');
+          document.getElementById('skip-to-content')?.setAttribute('inert', '');
           document.querySelector('header')?.setAttribute('inert', '');
           openDrawerTimeout = window.setTimeout(() => {
             drawer.classList.remove('-translate-x-full');
@@ -216,6 +221,7 @@ const genres = Array.from(genreMap.values())
           drawer.classList.add('-translate-x-full');
           drawer.setAttribute('inert', '');
           document.getElementById('main-content')?.removeAttribute('inert');
+          document.getElementById('skip-to-content')?.removeAttribute('inert');
           document.querySelector('header')?.removeAttribute('inert');
           if (closeDrawerTimeout) {
             clearTimeout(closeDrawerTimeout);
@@ -238,16 +244,28 @@ const genres = Array.from(genreMap.values())
         closeDrawerBtn?.addEventListener('click', () => closeDrawer('button'));
         drawerOverlay?.addEventListener('click', () => closeDrawer('button'));
 
-        window.matchMedia('(min-width: 1024px)').addEventListener('change', (e) => {
+        // Clean up previous listeners if any to prevent leaks across page swaps
+        if (mediaQueryList && mediaQueryListener) {
+          mediaQueryList.removeEventListener('change', mediaQueryListener);
+          mediaQueryList = null;
+          mediaQueryListener = null;
+        }
+        mediaQueryList = window.matchMedia('(min-width: 1024px)');
+        mediaQueryListener = (e: MediaQueryListEvent) => {
           if (e.matches) closeDrawer();
-        });
+        };
+        mediaQueryList.addEventListener('change', mediaQueryListener);
 
-        function onEscapeKey(e: KeyboardEvent) {
+        if (escapeKeyListener) {
+          window.removeEventListener('keydown', escapeKeyListener);
+          escapeKeyListener = null;
+        }
+        escapeKeyListener = (e: KeyboardEvent) => {
           if (e.key === 'Escape' && drawer && !drawer.hasAttribute('inert')) {
             closeDrawer('button');
           }
-        }
-        window.addEventListener('keydown', onEscapeKey);
+        };
+        window.addEventListener('keydown', escapeKeyListener);
 
         // Theme controller: sync select elements with current preference and localStorage
         const themeSelects = document.querySelectorAll('.theme-select-input') as NodeListOf<HTMLSelectElement>;
@@ -271,6 +289,27 @@ const genres = Array.from(genreMap.values())
           });
         });
       }
+
+      // Teardown before page swap
+      document.addEventListener('astro:before-swap', () => {
+        if (escapeKeyListener) {
+          window.removeEventListener('keydown', escapeKeyListener);
+          escapeKeyListener = null;
+        }
+        if (mediaQueryList && mediaQueryListener) {
+          mediaQueryList.removeEventListener('change', mediaQueryListener);
+          mediaQueryList = null;
+          mediaQueryListener = null;
+        }
+        if (closeDrawerTimeout) {
+          clearTimeout(closeDrawerTimeout);
+          closeDrawerTimeout = undefined;
+        }
+        if (openDrawerTimeout) {
+          clearTimeout(openDrawerTimeout);
+          openDrawerTimeout = undefined;
+        }
+      });
 
       initLayout();
       document.addEventListener('astro:after-swap', initLayout);
