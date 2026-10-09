@@ -1,0 +1,369 @@
+---
+import Layout from '../layouts/Layout.astro';
+import BookCard from '../components/BookCard.astro';
+import { getCollection } from 'astro:content';
+import { 
+  Search, 
+  X, 
+  Clock, 
+  ArrowDownAZ, 
+  User, 
+  RotateCcw,
+  BookOpen
+} from '@lucide/astro';
+
+const allBooks = await getCollection('books');
+
+// Sort by addedAt descending by default
+const sortedBooks = [...allBooks].sort((a, b) => {
+  return new Date(b.data.addedAt).getTime() - new Date(a.data.addedAt).getTime();
+});
+---
+
+<Layout title="Каталог книг">
+  <div class="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 pt-5 sm:pt-8 pb-16">
+    <!-- Accessible hidden document H1 for screen readers -->
+    <h1 class="sr-only">Каталог книг</h1>
+
+    <!-- Single Unified Toolbar: Search Input + Sorting Button Group -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6 sm:mb-8">
+      <!-- Search Bar (takes all flexible space) -->
+      <div class="relative flex-1 min-w-0">
+        <label for="catalog-search" class="sr-only">Поиск по библиотеке</label>
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[var(--color-placeholder)]">
+          <Search class="w-5 h-5 stroke-[1.8]" />
+        </div>
+        <input
+          type="text"
+          id="catalog-search"
+          placeholder="Название, автор или ISBN"
+          autocomplete="off"
+          class="w-full h-[48px] pl-12 pr-12 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] text-[16px] text-[var(--color-text)] placeholder-[var(--color-placeholder)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
+        />
+        <button
+          type="button"
+          id="search-clear-btn"
+          class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-[var(--color-placeholder)] hover:text-[var(--color-text)] cursor-pointer"
+          aria-label="Очистить поиск"
+        >
+          <X class="w-5 h-5 stroke-[1.8]" />
+        </button>
+      </div>
+
+      <!-- Sorting Button Group with Icons -->
+      <div 
+        class="inline-flex items-center p-1 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] h-[48px] gap-1 shrink-0 self-start sm:self-auto"
+        role="group" 
+        aria-label="Сортировка каталога"
+      >
+        <button
+          type="button"
+          class="sort-btn h-full px-3 sm:px-3.5 rounded-[6px] text-[14px] font-medium transition-colors cursor-pointer flex items-center gap-2 bg-[var(--color-primary)] text-white shadow-xs"
+          data-sort="recent"
+          title="Недавно добавлены"
+          aria-pressed="true"
+        >
+          <Clock class="w-4 h-4 stroke-[2]" />
+          <span class="hidden sm:inline">Недавно</span>
+        </button>
+        <button
+          type="button"
+          class="sort-btn h-full px-3 sm:px-3.5 rounded-[6px] text-[14px] font-medium transition-colors cursor-pointer flex items-center gap-2 text-[var(--color-text)] hover:bg-[var(--color-hover-surface)]"
+          data-sort="title"
+          title="По названию: А–Я"
+          aria-pressed="false"
+        >
+          <ArrowDownAZ class="w-4 h-4 stroke-[2]" />
+          <span class="hidden sm:inline">По названию</span>
+        </button>
+        <button
+          type="button"
+          class="sort-btn h-full px-3 sm:px-3.5 rounded-[6px] text-[14px] font-medium transition-colors cursor-pointer flex items-center gap-2 text-[var(--color-text)] hover:bg-[var(--color-hover-surface)]"
+          data-sort="author"
+          title="По автору: А–Я"
+          aria-pressed="false"
+        >
+          <User class="w-4 h-4 stroke-[2]" />
+          <span class="hidden sm:inline">По автору</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Catalog Content -->
+    <div id="catalog-container">
+      <!-- Grid View: 4 columns on desktop, gap 56px -->
+      <div 
+        id="catalog-grid" 
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 sm:gap-x-8 xl:gap-x-14 gap-y-8"
+      >
+        {sortedBooks.map((book) => (
+          <BookCard book={book} />
+        ))}
+      </div>
+
+      <!-- Empty Results State -->
+      <div id="empty-state" class="hidden text-center py-20 px-4">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--color-hover-surface)] flex items-center justify-center text-[var(--color-muted)]">
+          <BookOpen class="w-8 h-8 stroke-[1.5]" />
+        </div>
+        <h3 id="empty-title" class="font-['Lora'] text-[24px] font-medium text-[var(--color-heading)] mb-2">
+          Книги не найдены
+        </h3>
+        <p id="empty-description" class="text-[15px] text-[var(--color-muted)] max-w-md mx-auto mb-6">
+          По вашему текущему запросу и ярлыкам ничего не найдено.
+        </p>
+        <button
+          type="button"
+          id="reset-all-btn"
+          class="h-[46px] px-6 rounded-[var(--radius-control)] bg-[var(--color-primary)] text-white text-[15px] font-medium hover:bg-[var(--color-primary-hover)] transition-colors cursor-pointer inline-flex items-center gap-2"
+        >
+          <RotateCcw class="w-4 h-4 stroke-[2]" />
+          <span>Сбросить поиск и ярлыки</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<!-- Client Catalog Controller -->
+<script>
+  function initCatalogController() {
+    const searchInput = document.getElementById('catalog-search') as HTMLInputElement | null;
+    const searchClearBtn = document.getElementById('search-clear-btn');
+    const resetAllBtn = document.getElementById('reset-all-btn');
+    const emptyState = document.getElementById('empty-state');
+    const emptyTitle = document.getElementById('empty-title');
+    const emptyDesc = document.getElementById('empty-description');
+    const catalogGrid = document.getElementById('catalog-grid');
+
+    // Sort buttons
+    const sortBtns = document.querySelectorAll('.sort-btn');
+
+    // Sidebar tag buttons
+    const navGenreBtns = document.querySelectorAll('.nav-genre-btn');
+
+    // State
+    let searchQuery = '';
+    const initialGenre = new URLSearchParams(window.location.search).get('genre');
+    let selectedGenre = initialGenre ? normalize(initialGenre) : '';
+    let currentSort = 'recent'; // recent, title, author
+
+    function normalize(text: string): string {
+      return text.toLowerCase().replace(/ё/g, 'е').trim();
+    }
+
+    function updateActiveNavUI() {
+      // Update tag buttons in sidebar
+      navGenreBtns.forEach((btn) => {
+        const genreVal = (btn as HTMLElement).dataset.navGenre || '';
+        const countSpan = btn.querySelector('.genre-count');
+        const iconWrap = btn.querySelector('.tag-icon-wrap');
+        const isActive = (selectedGenre === '' && genreVal === '') || (selectedGenre !== '' && genreVal === selectedGenre);
+
+        if (isActive) {
+          btn.classList.add('bg-[var(--color-primary)]', 'text-white');
+          btn.classList.remove('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
+          countSpan?.classList.add('text-white/80');
+          countSpan?.classList.remove('text-[var(--color-muted)]');
+          iconWrap?.classList.remove('text-[var(--color-muted)]');
+          iconWrap?.classList.add('text-white/90');
+        } else {
+          btn.classList.remove('bg-[var(--color-primary)]', 'text-white');
+          btn.classList.add('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
+          countSpan?.classList.remove('text-white/80');
+          countSpan?.classList.add('text-[var(--color-muted)]');
+          iconWrap?.classList.add('text-[var(--color-muted)]');
+          iconWrap?.classList.remove('text-white/90');
+        }
+      });
+    }
+
+    function applyFilterAndSort() {
+      const gridItems = Array.from(document.querySelectorAll('#catalog-grid .book-item')) as HTMLElement[];
+      let visibleCount = 0;
+
+      // Filter grid items
+      gridItems.forEach((el) => {
+        const title = normalize(el.dataset.title || '');
+        const author = normalize(el.dataset.author || '');
+        const isbn = normalize(el.dataset.isbn || '');
+        const genres = normalize(el.dataset.genres || '');
+
+        let matchesSearch = true;
+        if (searchQuery) {
+          const cleanQuery = searchQuery.replace(/[-\s]/g, '');
+          matchesSearch = title.includes(searchQuery) || author.includes(searchQuery) || isbn.includes(cleanQuery);
+        }
+
+        let matchesGenre = true;
+        if (selectedGenre) {
+          matchesGenre = genres.includes(selectedGenre);
+        }
+
+        const isVisible = matchesSearch && matchesGenre;
+        if (isVisible) {
+          el.style.display = '';
+          visibleCount++;
+        } else {
+          el.style.display = 'none';
+        }
+      });
+
+      // Sorting
+      if (catalogGrid) {
+        gridItems.sort((a, b) => {
+          if (currentSort === 'title') {
+            return (a.dataset.title || '').localeCompare(b.dataset.title || '', 'ru');
+          } else if (currentSort === 'author') {
+            return (a.dataset.author || '').localeCompare(b.dataset.author || '', 'ru');
+          } else {
+            const addedA = parseInt(a.dataset.added || '0', 10);
+            const addedB = parseInt(b.dataset.added || '0', 10);
+            return addedB - addedA;
+          }
+        });
+        gridItems.forEach((item) => catalogGrid.appendChild(item));
+      }
+
+      // Empty states handling
+      if (emptyState) {
+        if (visibleCount === 0) {
+          emptyState.classList.remove('hidden');
+          if (catalogGrid) catalogGrid.classList.add('hidden');
+
+          if (selectedGenre && !searchQuery) {
+            if (emptyTitle) emptyTitle.textContent = 'Книги не найдены';
+            if (emptyDesc) emptyDesc.textContent = 'С выбранным ярлыком пока нет книг.';
+          } else {
+            if (emptyTitle) emptyTitle.textContent = 'Книги не найдены';
+            if (emptyDesc) emptyDesc.textContent = 'Попробуйте изменить поисковый запрос или сбросить фильтрацию.';
+          }
+        } else {
+          emptyState.classList.add('hidden');
+          if (catalogGrid) catalogGrid.classList.remove('hidden');
+        }
+      }
+
+      updateActiveNavUI();
+    }
+
+    // Search events
+    searchInput?.addEventListener('input', (e) => {
+      searchQuery = normalize((e.target as HTMLInputElement).value);
+      if (searchClearBtn) {
+        if (searchQuery) {
+          searchClearBtn.classList.remove('hidden');
+        } else {
+          searchClearBtn.classList.add('hidden');
+        }
+      }
+      applyFilterAndSort();
+    });
+
+    searchClearBtn?.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        searchQuery = '';
+        searchClearBtn.classList.add('hidden');
+        searchInput.focus();
+        applyFilterAndSort();
+      }
+    });
+
+    // Sort buttons event binding
+    sortBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const sortVal = (btn as HTMLElement).dataset.sort || 'recent';
+        currentSort = sortVal;
+
+        sortBtns.forEach((b) => {
+          const isCurrent = (b as HTMLElement).dataset.sort === currentSort;
+          if (isCurrent) {
+            b.classList.add('bg-[var(--color-primary)]', 'text-white', 'shadow-xs');
+            b.classList.remove('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
+            b.setAttribute('aria-pressed', 'true');
+          } else {
+            b.classList.remove('bg-[var(--color-primary)]', 'text-white', 'shadow-xs');
+            b.classList.add('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
+            b.setAttribute('aria-pressed', 'false');
+          }
+        });
+
+        applyFilterAndSort();
+      });
+    });
+
+    function syncUrlGenre() {
+      const url = new URL(window.location.href);
+      if (selectedGenre) {
+        url.searchParams.set('genre', selectedGenre);
+      } else {
+        url.searchParams.delete('genre');
+      }
+      window.history.pushState({}, '', url.pathname + url.search);
+    }
+
+    // Reset filters
+    function resetAllFilters() {
+      selectedGenre = '';
+      syncUrlGenre();
+      applyFilterAndSort();
+    }
+
+    resetAllBtn?.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        searchQuery = '';
+        searchClearBtn?.classList.add('hidden');
+      }
+      resetAllFilters();
+    });
+
+    // Sidebar tags binding
+    navGenreBtns.forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        // Prevent page navigation since we're already on index page
+        e.preventDefault();
+
+        const genre = (btn as HTMLElement).dataset.navGenre || '';
+        if (selectedGenre === genre && genre !== '') {
+          selectedGenre = ''; // toggle off if clicked again
+        } else {
+          selectedGenre = genre;
+        }
+        syncUrlGenre();
+        applyFilterAndSort();
+
+        // Close mobile drawer if open
+        const drawer = document.getElementById('mobile-drawer');
+        const drawerOverlay = document.getElementById('mobile-drawer-overlay');
+        if (drawer && !drawer.classList.contains('-translate-x-full')) {
+          drawer.classList.add('-translate-x-full');
+          setTimeout(() => drawerOverlay?.classList.add('hidden'), 250);
+          document.body.style.overflow = '';
+        }
+      });
+    });
+
+    // Listen to browser back/forward buttons
+    window.addEventListener('popstate', () => {
+      const paramGenre = new URLSearchParams(window.location.search).get('genre');
+      selectedGenre = paramGenre ? normalize(paramGenre) : '';
+      applyFilterAndSort();
+    });
+
+    // Keyboard shortcut '/' to focus search
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== searchInput) {
+        e.preventDefault();
+        searchInput?.focus();
+      }
+    });
+
+    // Initial run
+    applyFilterAndSort();
+  }
+
+  initCatalogController();
+  document.addEventListener('astro:after-swap', initCatalogController);
+</script>

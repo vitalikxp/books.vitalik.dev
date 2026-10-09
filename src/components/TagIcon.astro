@@ -1,0 +1,57 @@
+---
+import { 
+  Code,          // Программирование
+  Terminal,      // Python
+  Binary,        // Computer Science
+  Workflow,      // Алгоритмы
+  Palette,       // Дизайн
+  Briefcase,     // Карьера в IT
+  Brush,         // Оформление
+  Type,          // Типографика
+  Tag            // По умолчанию
+} from '@lucide/astro';
+
+interface Props {
+  tag: string;
+  class?: string;
+  size?: number;
+}
+
+const { tag, class: className = "w-3.5 h-3.5 stroke-[1.8]", size = 14 } = Astro.props;
+
+const normalized = (tag || '').toLowerCase().trim();
+
+let IconComponent = Tag;
+
+switch (normalized) {
+  case 'программирование':
+    IconComponent = Code;
+    break;
+  case 'python':
+    IconComponent = Terminal;
+    break;
+  case 'computer science':
+    IconComponent = Binary;
+    break;
+  case 'алгоритмы':
+    IconComponent = Workflow;
+    break;
+  case 'дизайн':
+    IconComponent = Palette;
+    break;
+  case 'карьера в it':
+    IconComponent = Briefcase;
+    break;
+  case 'оформление':
+    IconComponent = Brush;
+    break;
+  case 'типографика':
+    IconComponent = Type;
+    break;
+  default:
+    IconComponent = Tag;
+    break;
+}
+---
+
+<IconComponent class={className} size={size} aria-hidden="true" />

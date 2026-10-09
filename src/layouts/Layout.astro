@@ -1,0 +1,162 @@
+---
+import '../styles/global.css';
+import { getCollection } from 'astro:content';
+import Sidebar from '../components/Sidebar.astro';
+import { BookOpen, Menu } from '@lucide/astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'Моя библиотека',
+  description = 'Каталог домашней библиотеки',
+} = Astro.props;
+
+const allBooks = await getCollection('books');
+const totalBooks = allBooks.length;
+
+// Extract genres with counts, sorted by count descending then alphabetically
+const genreCounts = new Map<string, number>();
+allBooks.forEach((b) => {
+  b.data.genres.forEach((g) => {
+    genreCounts.set(g, (genreCounts.get(g) || 0) + 1);
+  });
+});
+const genres = Array.from(genreCounts.entries())
+  .map(([name, count]) => ({ name, count }))
+  .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ru'));
+---
+
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Google Fonts: Lora (Display serif) + Inter (UI sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;0,700;1,400&subset=cyrillic&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>{title} — Моя библиотека</title>
+    <meta name="description" content={description} />
+  </head>
+  <body class="bg-[var(--color-page)] text-[var(--color-text)] font-sans antialiased min-h-screen relative selection:bg-[#3c5144]/20 selection:text-inherit">
+    <!-- Tactile Paper Grain Overlay -->
+    <div class="paper-texture" aria-hidden="true"></div>
+
+    <!-- Skip link for keyboard accessibility -->
+    <a 
+      href="#main-content" 
+      class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-[var(--color-primary)] focus:text-white focus:rounded-lg focus:shadow-lg focus:outline-none"
+    >
+      Перейти к книгам
+    </a>
+
+    <!-- Mobile Top Navigation (< 1024px) -->
+    <header class="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 h-16 bg-[var(--color-sidebar)]/95 backdrop-blur-md border-b border-[var(--color-line)]">
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          id="open-drawer-btn"
+          class="p-2 -ml-2 text-[var(--color-text)] hover:bg-[var(--color-hover-surface)] rounded-lg transition-colors cursor-pointer"
+          aria-label="Открыть навигацию"
+        >
+          <Menu class="w-6 h-6 stroke-[1.8]" />
+        </button>
+
+        <a href="/" class="flex items-center gap-2 text-[var(--color-heading)]">
+          <BookOpen class="w-6 h-6 stroke-[1.8] text-[var(--color-primary)]" />
+          <span class="font-['Lora'] text-[20px] font-medium tracking-tight">
+            Моя библиотека
+          </span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Mobile Navigation Drawer -->
+    <div 
+      id="mobile-drawer-overlay"
+      class="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs hidden transition-opacity duration-200 lg:hidden"
+      aria-hidden="true"
+    ></div>
+    <div 
+      id="mobile-drawer"
+      class="fixed inset-y-0 left-0 z-50 w-[min(312px,88vw)] bg-[var(--color-sidebar)] shadow-2xl transform -translate-x-full transition-transform duration-250 ease-out lg:hidden"
+      role="dialog"
+      aria-label="Боковая навигация"
+    >
+      <Sidebar 
+        totalBooks={totalBooks}
+        genres={genres}
+        isMobileDrawer={true} 
+      />
+    </div>
+
+    <!-- Desktop Master Layout -->
+    <div class="flex min-h-screen">
+      <!-- Desktop Fixed Sidebar -->
+      <div class="hidden lg:block shrink-0 sticky top-0 h-screen w-[var(--sidebar-width)] z-20">
+        <Sidebar 
+          totalBooks={totalBooks}
+          genres={genres}
+          isMobileDrawer={false} 
+        />
+      </div>
+
+      <!-- Main Catalog & Pages Area -->
+      <main id="main-content" class="flex-1 min-w-0 bg-[var(--color-page)]">
+        <slot />
+      </main>
+    </div>
+
+    <!-- Layout Global Scripts -->
+    <script>
+      function initLayout() {
+        const openDrawerBtn = document.getElementById('open-drawer-btn');
+        const closeDrawerBtn = document.getElementById('close-drawer-btn');
+        const drawerOverlay = document.getElementById('mobile-drawer-overlay');
+        const drawer = document.getElementById('mobile-drawer');
+
+        function openDrawer() {
+          if (!drawer || !drawerOverlay) return;
+          drawerOverlay.classList.remove('hidden');
+          setTimeout(() => {
+            drawer.classList.remove('-translate-x-full');
+          }, 10);
+          document.body.style.overflow = 'hidden';
+        }
+
+        function closeDrawer() {
+          if (!drawer || !drawerOverlay) return;
+          drawer.classList.add('-translate-x-full');
+          setTimeout(() => {
+            drawerOverlay.classList.add('hidden');
+            document.body.style.overflow = '';
+          }, 250);
+        }
+
+        openDrawerBtn?.addEventListener('click', openDrawer);
+        closeDrawerBtn?.addEventListener('click', closeDrawer);
+        drawerOverlay?.addEventListener('click', closeDrawer);
+
+        // Escape key handler
+        window.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            closeDrawer();
+          }
+        });
+      }
+
+      initLayout();
+      document.addEventListener('astro:after-swap', initLayout);
+    </script>
+  </body>
+</html>

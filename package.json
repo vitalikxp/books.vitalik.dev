@@ -1,0 +1,26 @@
+{
+  "name": "books.vitalik.dev",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "scan": "python3 scripts/book_scanner.py"
+  },
+  "bugs": {
+    "url": "https://github.com/vitalikxp/books.vitalik.dev/issues"
+  },
+  "homepage": "https://github.com/vitalikxp/books.vitalik.dev#readme",
+  "dependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@lucide/astro": "^1.53.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.3.8",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3"
+  }
+}

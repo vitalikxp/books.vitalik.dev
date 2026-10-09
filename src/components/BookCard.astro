@@ -1,0 +1,64 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import TagIcon from './TagIcon.astro';
+
+interface Props {
+  book: CollectionEntry<'books'>;
+}
+
+const { book } = Astro.props;
+const data = book.data;
+---
+
+<article 
+  class="book-item group flex flex-col w-full text-left"
+  data-id={book.id}
+  data-title={data.title.toLowerCase()}
+  data-author={data.author.toLowerCase()}
+  data-isbn={(data.isbn || '').replace(/[-\s]/g, '').toLowerCase()}
+  data-genres={data.genres.map((g: string) => g.toLowerCase()).join(',')}
+  data-added={new Date(data.addedAt).getTime()}
+>
+  <!-- Book Cover Container: Ratio 4/5 on desktop, natural on mobile, aligned bottom, soft shadow -->
+  <div class="w-full relative sm:aspect-[4/5] flex items-end justify-center mb-3">
+    <a 
+      href={`/books/${book.id}`}
+      class="block relative max-w-full max-h-full book-cover-container transition-transform duration-150 focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+      aria-label={`Открыть страницу книги «${data.title}» автора ${data.author}`}
+    >
+      <img 
+        src={data.cover} 
+        alt="" 
+        loading="lazy"
+        class="w-auto h-auto max-h-[310px] max-w-full object-contain object-bottom block rounded-[var(--radius-cover)]"
+        onerror="this.onerror=null; this.src='/covers/default-book.svg';"
+      />
+      <!-- Tactile spine lighting overlay -->
+      <div class="book-spine-line"></div>
+    </a>
+  </div>
+
+  <!-- Title: Inter 18/24px, weight 600, max 2 lines -->
+  <h2 class="text-[18px] leading-[24px] font-semibold text-[var(--color-text)] line-clamp-2 mb-1 group-hover:text-[var(--color-primary)] transition-colors">
+    <a href={`/books/${book.id}`} class="hover:underline">
+      {data.title}
+    </a>
+  </h2>
+
+  <!-- Author: Inter 16/22px, weight 400, max 2 lines -->
+  <p class="text-[16px] leading-[22px] font-normal text-[var(--color-muted)] line-clamp-2 mb-2.5">
+    {data.author}
+  </p>
+
+  <!-- Book Labels (Tags) -->
+  {data.genres && data.genres.length > 0 && (
+    <div class="flex flex-wrap gap-1.5 items-center mt-auto">
+      {data.genres.map((genre: string) => (
+        <span class="inline-flex items-center gap-1.5 text-[12px] leading-[16px] font-medium px-2 py-0.5 rounded-[var(--radius-pill)] bg-[var(--color-hover-surface)] text-[var(--color-text)] border border-[var(--color-line)]">
+          <TagIcon tag={genre} class="w-3 h-3 stroke-[2] text-[var(--color-muted)] shrink-0" />
+          <span>{genre}</span>
+        </span>
+      ))}
+    </div>
+  )}
+</article>

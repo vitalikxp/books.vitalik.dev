@@ -1,0 +1,109 @@
+---
+import { BookOpen, X, Tag, Library } from '@lucide/astro';
+import TagIcon from './TagIcon.astro';
+
+interface Props {
+  totalBooks?: number;
+  genres?: Array<{ name: string; count: number }>;
+  isMobileDrawer?: boolean;
+}
+
+const {
+  totalBooks = 0,
+  genres = [],
+  isMobileDrawer = false,
+} = Astro.props;
+const isHome = Astro.url.pathname === '/';
+---
+
+<aside 
+  class={`flex flex-col h-full bg-[var(--color-sidebar)] select-none ${isMobileDrawer ? 'w-full p-6' : 'w-[var(--sidebar-width)] p-6 lg:p-7 border-r border-[var(--color-line)]'}`}
+  aria-label="Боковая навигация по библиотеке"
+>
+  <!-- Header: Logo / Branding -->
+  <div class="flex items-center justify-between mb-8 shrink-0">
+    <a 
+      href="/" 
+      class="flex items-center gap-3.5 group text-[var(--color-heading)] focus-visible:rounded-lg"
+      aria-label="Моя библиотека — главная страница"
+    >
+      <div class="text-[var(--color-heading)] group-hover:text-[var(--color-primary)] transition-colors">
+        <BookOpen class="w-8 h-8 stroke-[1.8]" />
+      </div>
+      <span class="font-['Lora'] text-[26px] leading-tight font-medium text-[var(--color-heading)] tracking-[-0.01em]">
+        Моя библиотека
+      </span>
+    </a>
+
+    {isMobileDrawer && (
+      <button 
+        type="button" 
+        id="close-drawer-btn" 
+        class="p-2 text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:bg-[var(--color-hover-surface)] rounded-lg transition-colors cursor-pointer"
+        aria-label="Закрыть меню"
+      >
+        <X class="w-6 h-6 stroke-[1.8]" />
+      </button>
+    )}
+  </div>
+
+  <!-- Navigation items -->
+  <nav class="flex-1 overflow-y-auto pr-1 -mr-1 space-y-6" aria-label="Разделы каталога">
+    <!-- Tags Section in Sidebar -->
+    {genres.length > 0 && (
+      <div>
+        <div class="px-4 mb-2.5 text-[13px] font-medium tracking-[0.08em] text-[var(--color-muted)] uppercase flex items-center gap-2">
+          <Tag class="w-3.5 h-3.5 stroke-[2]" />
+          <span>ЯРЛЫКИ</span>
+        </div>
+        <ul class="space-y-0.5" role="list">
+          <!-- All Books (Reset Tag Filter) -->
+          <li>
+            <a
+              href="/"
+              data-nav-genre=""
+              class={`nav-genre-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-[var(--radius-nav)] text-[15px] font-normal transition-colors cursor-pointer text-left group ${
+                isHome
+                  ? 'bg-[var(--color-primary)] text-white'
+                  : 'text-[var(--color-text)] hover:bg-[var(--color-hover-surface)]'
+              }`}
+            >
+              <div class="flex items-center gap-2.5 min-w-0">
+                <span class={`tag-icon-wrap shrink-0 ${isHome ? 'opacity-90' : 'text-[var(--color-muted)] group-hover:text-[var(--color-text)] transition-colors'}`}>
+                  <Library class="w-4 h-4 stroke-[1.8]" />
+                </span>
+                <span class="truncate">Все книги</span>
+              </div>
+              {totalBooks > 0 && (
+                <span class={`genre-count font-mono text-[13px] shrink-0 ml-2 ${isHome ? 'opacity-80' : 'text-[var(--color-muted)] group-hover:text-[var(--color-text)]'}`}>
+                  {totalBooks}
+                </span>
+              )}
+            </a>
+          </li>
+
+          <!-- Specific Tag Items -->
+          {genres.map((g) => (
+            <li>
+              <a
+                href={`/?genre=${encodeURIComponent(g.name.toLowerCase())}`}
+                data-nav-genre={g.name.toLowerCase()}
+                class="nav-genre-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-[var(--radius-nav)] text-[15px] font-normal text-[var(--color-text)] hover:bg-[var(--color-hover-surface)] transition-colors cursor-pointer text-left group"
+              >
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="tag-icon-wrap text-[var(--color-muted)] group-hover:text-[var(--color-text)] transition-colors shrink-0">
+                    <TagIcon tag={g.name} class="w-4 h-4 stroke-[1.8]" />
+                  </span>
+                  <span class="truncate">{g.name}</span>
+                </div>
+                <span class="genre-count font-mono text-[13px] text-[var(--color-muted)] group-hover:text-[var(--color-text)] shrink-0 ml-2">
+                  {g.count}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </nav>
+</aside>

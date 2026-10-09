@@ -1,0 +1,152 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import TagIcon from '../../components/TagIcon.astro';
+import { ArrowLeft } from '@lucide/astro';
+
+export async function getStaticPaths() {
+  const books = await getCollection('books');
+  return books.map((book) => ({
+    params: { id: book.id },
+    props: { book },
+  }));
+}
+
+const { book } = Astro.props;
+const { Content } = await render(book);
+const data = book.data;
+
+let badgeText = '';
+let badgeBgClass = '';
+
+if (data.status === 'reading') {
+  badgeText = 'Читаю';
+  badgeBgClass = 'bg-[var(--color-status-reading)]';
+} else if (data.status === 'read') {
+  badgeText = 'Прочитано';
+  badgeBgClass = 'bg-[var(--color-status-read)]';
+} else if (data.status === 'to-read' || data.status === 'planned') {
+  badgeText = 'В планах';
+  badgeBgClass = 'bg-[var(--color-status-planned)]';
+} else {
+  badgeText = 'Без статуса';
+  badgeBgClass = 'bg-[var(--color-status-neutral)]';
+}
+---
+
+<Layout title={`${data.title} — ${data.author}`}>
+  <div class="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 pt-6 sm:pt-8 lg:pt-10 pb-16">
+    <!-- Back to catalog button -->
+    <div class="mb-8">
+      <a 
+        href="/" 
+        class="inline-flex items-center gap-2 text-[15px] font-medium text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors group"
+      >
+        <ArrowLeft class="w-4 h-4 stroke-[2] transition-transform group-hover:-translate-x-1" />
+        <span>Вернуться в каталог</span>
+      </a>
+    </div>
+
+    <!-- Main Book Showcase -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-14 items-start">
+      <!-- Left Column: Cover Presentation -->
+      <div class="md:col-span-5 lg:col-span-4 shrink-0 mx-auto w-full max-w-sm md:max-w-none">
+        <div class="relative w-full aspect-[4/5] flex items-end justify-center">
+          <div class="relative max-w-full max-h-full book-cover-container">
+            <img 
+              src={data.cover} 
+              alt={`Обложка книги «${data.title}»`} 
+              class="w-auto h-auto max-h-[460px] max-w-full object-contain object-bottom block rounded-[var(--radius-cover)]"
+              onerror="this.onerror=null; this.src='/covers/default-book.svg';"
+            />
+            <div class="book-spine-line"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Details & Literary Notes -->
+      <div class="md:col-span-7 lg:col-span-8 flex flex-col text-left">
+        <!-- Status Badges -->
+        <div class="flex flex-wrap items-center gap-2.5 mb-4">
+          <span class={`inline-flex items-center justify-center min-h-[28px] px-3.5 rounded-[var(--radius-pill)] text-[14px] leading-[20px] font-medium text-[var(--color-status-text)] ${badgeBgClass}`}>
+            {badgeText}
+          </span>
+
+          {data.language && (
+            <span class="inline-flex items-center justify-center min-h-[28px] px-3 rounded-[var(--radius-pill)] text-[13px] font-medium bg-[var(--color-surface)] border border-[var(--color-line)] text-[var(--color-muted)]">
+              {data.language === 'ru' ? 'Русское издание' : data.language}
+            </span>
+          )}
+        </div>
+
+        <!-- Title in Lora serif -->
+        <h1 class="font-['Lora'] text-[32px] sm:text-[44px] lg:text-[48px] font-medium leading-[1.16] text-[var(--color-heading)] tracking-[-0.015em] mb-2">
+          {data.title}
+        </h1>
+
+        <!-- Original Title if present -->
+        {data.originalTitle && (
+          <p class="font-['Lora'] italic text-[18px] text-[var(--color-muted)] mb-3">
+            {data.originalTitle}
+          </p>
+        )}
+
+        <!-- Author in Inter -->
+        <p class="text-[20px] font-medium text-[var(--color-primary)] mb-8">
+          {data.author}
+        </p>
+
+        <!-- Metadata Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-line)] mb-8">
+          {data.year && (
+            <div>
+              <span class="block text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)] mb-1">Год</span>
+              <span class="text-[14px] font-medium text-[var(--color-text)]">{data.year}</span>
+            </div>
+          )}
+          {data.publisher && (
+            <div>
+              <span class="block text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)] mb-1">Издательство</span>
+              <span class="text-[14px] font-medium text-[var(--color-text)] truncate block">{data.publisher}</span>
+            </div>
+          )}
+          {data.pages && (
+            <div>
+              <span class="block text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)] mb-1">Страниц</span>
+              <span class="text-[14px] font-medium text-[var(--color-text)]">{data.pages}</span>
+            </div>
+          )}
+          {data.isbn && (
+            <div>
+              <span class="block text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)] mb-1">ISBN</span>
+              <span class="text-[13px] font-mono text-[var(--color-text)] truncate block">{data.isbn}</span>
+            </div>
+          )}
+        </div>
+
+        <!-- Genres Tags -->
+        {data.genres.length > 0 && (
+          <div class="mb-8 flex flex-wrap gap-2 items-center">
+            <span class="text-[13px] font-medium text-[var(--color-muted)] mr-1">Ярлыки:</span>
+            {data.genres.map((genre) => (
+              <span class="inline-flex items-center gap-1.5 text-[13px] px-3 py-1 rounded-lg bg-[var(--color-surface)] border border-[var(--color-line)] text-[var(--color-text)] font-medium">
+                <TagIcon tag={genre} class="w-3.5 h-3.5 stroke-[2] text-[var(--color-muted)] shrink-0" />
+                <span>{genre}</span>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <!-- Literary Annotation & Markdown Content -->
+        <div class="pt-6 border-t border-[var(--color-line)]">
+          <h2 class="font-['Lora'] text-[22px] font-medium text-[var(--color-heading)] mb-4">
+            О книге и заметки
+          </h2>
+          <div class="text-[16px] leading-[1.65] text-[var(--color-text)] font-normal space-y-4 max-w-none">
+            <Content />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

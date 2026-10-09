@@ -1,0 +1,157 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    color-scheme: light;
+
+    /* Palette tokens from DESIGN.md */
+    --color-page: #f3eee6;
+    --color-sidebar: #f2eee5;
+    --color-surface: #faf7f1;
+    --color-heading: #181a17;
+    --color-text: #292e29;
+    --color-muted: #656a62;
+    --color-placeholder: #6c7067;
+    --color-line: #d9d4ca;
+    --color-control-border: #858b7c;
+    --color-primary: #3c5144;
+    --color-primary-hover: #314638;
+    --color-primary-active: #273a2d;
+    --color-on-primary: #ffffff;
+    --color-hover-surface: #e7e8dd;
+    --color-status-reading: #d0ddc9;
+    --color-status-read: #cfddcb;
+    --color-status-planned: #efd7a5;
+    --color-status-loan: #e8bea5;
+    --color-status-neutral: #e2ded5;
+    --color-status-text: #24362b;
+    --color-danger: #9f3d32;
+
+    /* Typography families */
+    --font-display: "Lora", Georgia, "Times New Roman", serif;
+    --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    /* Spacing scale */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-14: 56px;
+    --space-16: 64px;
+
+    /* Radii */
+    --radius-cover: 4px;
+    --radius-control: 8px;
+    --radius-nav: 10px;
+    --radius-pill: 999px;
+
+    /* Layout metrics */
+    --sidebar-width: 312px;
+    --content-padding: 40px;
+    --content-max-width: 1280px;
+    --catalog-columns: 4;
+    --catalog-gap: 56px;
+    --cover-ratio: 4 / 5;
+
+    --control-height: 44px;
+    --search-height: 48px;
+    --primary-button-height: 52px;
+
+    /* Shadows and Focus */
+    --shadow-cover: 0 4px 10px rgb(42 38 30 / 16%);
+    --shadow-popover: 0 8px 24px rgb(42 38 30 / 12%);
+    --focus-ring: 3px solid #3c5144;
+    --duration-fast: 150ms;
+  }
+}
+
+body {
+  background-color: var(--color-page);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle tactile paper texture overlay */
+.paper-texture {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Book cover shadow and realistic tactile spine */
+.book-cover-container {
+  box-shadow: var(--shadow-cover);
+  border-radius: var(--radius-cover);
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+
+.book-cover-container:hover {
+  box-shadow: 0 8px 18px rgb(42 38 30 / 22%);
+}
+
+.book-spine-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 10px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.22) 0%,
+    rgba(0, 0, 0, 0.08) 35%,
+    rgba(255, 255, 255, 0.2) 65%,
+    rgba(0, 0, 0, 0.02) 100%
+  );
+  pointer-events: none;
+  z-index: 10;
+  border-top-left-radius: inherit;
+  border-bottom-left-radius: inherit;
+}
+
+/* Accessible focus ring */
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Custom quiet scrollbar matching warm theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-sidebar);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-control-border);
+}
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
