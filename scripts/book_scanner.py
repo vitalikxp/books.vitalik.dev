@@ -43,7 +43,7 @@ def slugify(text: str) -> str:
         else:
             res.append(' ')
     slug = re.sub(r'[\s_]+', '-', ''.join(res)).strip('-')
-    return slug[:60] if slug else "book"
+    return slug[:60].rstrip('-') if slug else "book"
 
 def fetch_json(url: str):
     headers = {
@@ -112,7 +112,7 @@ def search_google_books(query: str, isbn: str = None):
                 break
 
     # Extract cover URL
-    image_links = info.get('imageLinks', {})
+    image_links = info.get('imageLinks') or {}
     cover_url = image_links.get('extraLarge') or image_links.get('large') or image_links.get('medium') or image_links.get('thumbnail') or image_links.get('smallThumbnail')
     if cover_url:
         cover_url = cover_url.replace('http://', 'https://')
@@ -155,13 +155,13 @@ def search_open_library(query: str, isbn: str = None):
 
     return {
         'title': doc.get('title', ''),
-        'author': ", ".join(doc.get('author_name', [])) or "Неизвестный автор",
+        'author': ", ".join(doc.get('author_name') or []) or "Неизвестный автор",
         'year': doc.get('first_publish_year'),
-        'publisher': doc.get('publisher', [''])[0] if doc.get('publisher') else '',
-        'isbn': doc.get('isbn', [''])[0] if doc.get('isbn') else '',
+        'publisher': (doc.get('publisher') or [''])[0] if doc.get('publisher') else '',
+        'isbn': (doc.get('isbn') or [''])[0] if doc.get('isbn') else '',
         'pages': doc.get('number_of_pages_median'),
-        'genres': doc.get('subject', [])[:5],
-        'language': doc.get('language', ['ru'])[0] if doc.get('language') else 'ru',
+        'genres': (doc.get('subject') or [])[:5],
+        'language': (doc.get('language') or ['ru'])[0] if doc.get('language') else 'ru',
         'description': '',
         'cover_url': cover_url,
     }
@@ -271,16 +271,19 @@ author: {json.dumps(final_author, ensure_ascii=False)}
         p = Path(photo_path)
         if p.exists():
             PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-            dest = PROCESSED_DIR / p.name
-            if dest.exists():
-                stem = p.stem
-                suffix = p.suffix
-                counter = 1
-                while (PROCESSED_DIR / f"{stem}_{counter}{suffix}").exists():
-                    counter += 1
-                dest = PROCESSED_DIR / f"{stem}_{counter}{suffix}"
-            shutil.move(str(p), str(dest))
-            print(f"[✓] Исходное фото перемещено в {dest.relative_to(ROOT_DIR)}")
+            if p.resolve().parent == PROCESSED_DIR.resolve():
+                print(f"[*] Исходное фото уже находится в {PROCESSED_DIR.name}/, перемещение пропущено")
+            else:
+                dest = PROCESSED_DIR / p.name
+                if dest.exists():
+                    stem = p.stem
+                    suffix = p.suffix
+                    counter = 1
+                    while (PROCESSED_DIR / f"{stem}_{counter}{suffix}").exists():
+                        counter += 1
+                    dest = PROCESSED_DIR / f"{stem}_{counter}{suffix}"
+                shutil.move(str(p), str(dest))
+                print(f"[✓] Исходное фото перемещено в {dest.relative_to(ROOT_DIR)}")
 
     return True
 

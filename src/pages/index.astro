@@ -411,11 +411,8 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
         // Close mobile drawer if open
         const drawer = document.getElementById('mobile-drawer');
-        const drawerOverlay = document.getElementById('mobile-drawer-overlay');
         if (drawer && !drawer.classList.contains('-translate-x-full')) {
-          drawer.classList.add('-translate-x-full');
-          setTimeout(() => drawerOverlay?.classList.add('hidden'), 250);
-          document.body.style.overflow = '';
+          document.getElementById('close-drawer-btn')?.click();
         }
       });
     });
