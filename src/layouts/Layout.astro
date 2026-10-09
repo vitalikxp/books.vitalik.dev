@@ -21,7 +21,10 @@ const totalBooks = allBooks.length;
 const genreCounts = new Map<string, number>();
 allBooks.forEach((b) => {
   b.data.genres.forEach((g) => {
-    genreCounts.set(g, (genreCounts.get(g) || 0) + 1);
+    const trimmed = (g || '').trim();
+    if (trimmed) {
+      genreCounts.set(trimmed, (genreCounts.get(trimmed) || 0) + 1);
+    }
   });
 });
 const genres = Array.from(genreCounts.entries())
@@ -61,6 +64,20 @@ const genres = Array.from(genreCounts.entries())
           mq.addEventListener('change', updateTheme);
         }
       })();
+    </script>
+
+    <!-- Global image fallback listener -->
+    <script is:inline>
+      document.addEventListener(
+        'error',
+        (e) => {
+          const el = e.target;
+          if (el && el.tagName === 'IMG' && el.dataset.fallback && el.src !== el.dataset.fallback) {
+            el.src = el.dataset.fallback;
+          }
+        },
+        true
+      );
     </script>
   </head>
   <body class="bg-[var(--color-page)] text-[var(--color-text)] font-sans antialiased min-h-screen relative selection:bg-[var(--color-primary)]/25 selection:text-inherit">
@@ -134,6 +151,8 @@ const genres = Array.from(genreCounts.entries())
 
     <!-- Layout Global Scripts -->
     <script>
+      let closeDrawerTimeout: number | undefined;
+
       function initLayout() {
         const openDrawerBtn = document.getElementById('open-drawer-btn');
         const closeDrawerBtn = document.getElementById('close-drawer-btn');
@@ -142,6 +161,10 @@ const genres = Array.from(genreCounts.entries())
 
         function openDrawer() {
           if (!drawer || !drawerOverlay) return;
+          if (closeDrawerTimeout) {
+            clearTimeout(closeDrawerTimeout);
+            closeDrawerTimeout = undefined;
+          }
           drawerOverlay.classList.remove('hidden');
           setTimeout(() => {
             drawer.classList.remove('-translate-x-full');
@@ -152,9 +175,13 @@ const genres = Array.from(genreCounts.entries())
         function closeDrawer() {
           if (!drawer || !drawerOverlay) return;
           drawer.classList.add('-translate-x-full');
-          setTimeout(() => {
+          if (closeDrawerTimeout) {
+            clearTimeout(closeDrawerTimeout);
+          }
+          closeDrawerTimeout = window.setTimeout(() => {
             drawerOverlay.classList.add('hidden');
             document.body.style.overflow = '';
+            closeDrawerTimeout = undefined;
           }, 250);
         }
 
@@ -162,12 +189,14 @@ const genres = Array.from(genreCounts.entries())
         closeDrawerBtn?.addEventListener('click', closeDrawer);
         drawerOverlay?.addEventListener('click', closeDrawer);
 
-        // Escape key handler
-        window.addEventListener('keydown', (e) => {
+        // Escape key handler (idempotent registration)
+        function onEscapeKey(e: KeyboardEvent) {
           if (e.key === 'Escape') {
             closeDrawer();
           }
-        });
+        }
+        window.removeEventListener('keydown', onEscapeKey);
+        window.addEventListener('keydown', onEscapeKey);
       }
 
       initLayout();

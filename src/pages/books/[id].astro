@@ -57,7 +57,7 @@ if (data.status === 'reading') {
               src={data.cover} 
               alt={`Обложка книги «${data.title}»`} 
               class="w-auto h-auto max-h-[460px] max-w-full object-contain object-bottom block rounded-[var(--radius-cover)]"
-              onerror="this.onerror=null; this.src='/covers/default-book.svg';"
+              data-fallback="/covers/default-book.svg"
             />
             <div class="book-spine-line"></div>
           </div>

@@ -223,12 +223,12 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
     # Generate Markdown file
     md_file = BOOKS_DIR / f"{slug}.md"
     year_str = f"year: {book_info['year']}\n" if book_info.get('year') else ""
-    pub_str = f'publisher: "{book_info["publisher"]}"\n' if book_info.get('publisher') else ""
-    isbn_str = f'isbn: "{book_info["isbn"]}"\n' if book_info.get('isbn') else ""
+    pub_str = f'publisher: {json.dumps(book_info["publisher"], ensure_ascii=False)}\n' if book_info.get('publisher') else ""
+    isbn_str = f'isbn: {json.dumps(book_info["isbn"], ensure_ascii=False)}\n' if book_info.get('isbn') else ""
     pages_str = f"pages: {book_info['pages']}\n" if book_info.get('pages') else ""
     rating_str = f"rating: {rating}\n" if rating else ""
     genres_list = book_info.get('genres', [])
-    genres_yaml = "genres:\n" + "".join([f'  - "{g}"\n' for g in genres_list]) if genres_list else "genres: []\n"
+    genres_yaml = "genres:\n" + "".join([f'  - {json.dumps(g, ensure_ascii=False)}\n' for g in genres_list]) if genres_list else "genres: []\n"
 
     desc = (book_info.get('description') or '').strip()
     if desc:
@@ -237,11 +237,11 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
         desc = f"Экземпляр бумажной книги «{final_title}» ({final_author})."
 
     content = f"""---
-title: "{final_title}"
-author: "{final_author}"
-{year_str}{pub_str}{isbn_str}language: "{book_info.get('language', 'ru')}"
-{pages_str}cover: "{cover_rel_path}"
-{genres_yaml}status: "{status}"
+title: {json.dumps(final_title, ensure_ascii=False)}
+author: {json.dumps(final_author, ensure_ascii=False)}
+{year_str}{pub_str}{isbn_str}language: {json.dumps(book_info.get('language', 'ru'), ensure_ascii=False)}
+{pages_str}cover: {json.dumps(cover_rel_path, ensure_ascii=False)}
+{genres_yaml}status: {json.dumps(status, ensure_ascii=False)}
 {rating_str}addedAt: {date.today().isoformat()}
 ---
 
@@ -258,6 +258,13 @@ author: "{final_author}"
         if p.exists():
             PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
             dest = PROCESSED_DIR / p.name
+            if dest.exists():
+                stem = p.stem
+                suffix = p.suffix
+                counter = 1
+                while (PROCESSED_DIR / f"{stem}_{counter}{suffix}").exists():
+                    counter += 1
+                dest = PROCESSED_DIR / f"{stem}_{counter}{suffix}"
             shutil.move(str(p), str(dest))
             print(f"[✓] Исходное фото перемещено в {dest.relative_to(ROOT_DIR)}")
 

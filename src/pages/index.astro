@@ -162,12 +162,13 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     function updateActiveNavUI() {
       // Update tag buttons in sidebar
       navGenreBtns.forEach((btn) => {
-        const genreVal = (btn as HTMLElement).dataset.navGenre || '';
+        const genreVal = normalize((btn as HTMLElement).dataset.navGenre || '');
         const countSpan = btn.querySelector('.genre-count');
         const iconWrap = btn.querySelector('.tag-icon-wrap');
         const isActive = (selectedGenre === '' && genreVal === '') || (selectedGenre !== '' && genreVal === selectedGenre);
 
         if (isActive) {
+          btn.setAttribute('aria-current', 'page');
           btn.classList.add('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]');
           btn.classList.remove('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
           countSpan?.classList.add('text-[var(--color-on-primary)]');
@@ -175,6 +176,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
           iconWrap?.classList.remove('text-[var(--color-muted)]');
           iconWrap?.classList.add('text-[var(--color-on-primary)]');
         } else {
+          btn.removeAttribute('aria-current');
           btn.classList.remove('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]');
           btn.classList.add('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
           countSpan?.classList.remove('text-[var(--color-on-primary)]');
@@ -199,7 +201,9 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         let matchesSearch = true;
         if (searchQuery) {
           const cleanQuery = searchQuery.replace(/[-\s]/g, '');
-          matchesSearch = title.includes(searchQuery) || author.includes(searchQuery) || isbn.includes(cleanQuery);
+          matchesSearch = title.includes(searchQuery) || 
+                          author.includes(searchQuery) || 
+                          (cleanQuery.length > 0 && isbn.includes(cleanQuery));
         }
 
         let matchesGenre = true;
@@ -221,9 +225,17 @@ const sortedBooks = [...allBooks].sort((a, b) => {
       if (catalogGrid) {
         gridItems.sort((a, b) => {
           if (currentSort === 'title') {
-            return (a.dataset.title || '').localeCompare(b.dataset.title || '', 'ru');
+            const titleDiff = (a.dataset.title || '').localeCompare(b.dataset.title || '', 'ru');
+            if (titleDiff !== 0) return titleDiff;
+            const authorDiff = (a.dataset.author || '').localeCompare(b.dataset.author || '', 'ru');
+            if (authorDiff !== 0) return authorDiff;
+            return (a.dataset.id || '').localeCompare(b.dataset.id || '');
           } else if (currentSort === 'author') {
-            return (a.dataset.author || '').localeCompare(b.dataset.author || '', 'ru');
+            const authorDiff = (a.dataset.author || '').localeCompare(b.dataset.author || '', 'ru');
+            if (authorDiff !== 0) return authorDiff;
+            const titleDiff = (a.dataset.title || '').localeCompare(b.dataset.title || '', 'ru');
+            if (titleDiff !== 0) return titleDiff;
+            return (a.dataset.id || '').localeCompare(b.dataset.id || '');
           } else {
             // "recent" mode: sort by publication year descending (newest to oldest)
             const yearA = parseInt(a.dataset.year || '0', 10);
@@ -342,7 +354,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         // Prevent page navigation since we're already on index page
         e.preventDefault();
 
-        const genre = (btn as HTMLElement).dataset.navGenre || '';
+        const genre = normalize((btn as HTMLElement).dataset.navGenre || '');
         if (selectedGenre === genre && genre !== '') {
           selectedGenre = ''; // toggle off if clicked again
         } else {
@@ -362,20 +374,24 @@ const sortedBooks = [...allBooks].sort((a, b) => {
       });
     });
 
-    // Listen to browser back/forward buttons
-    window.addEventListener('popstate', () => {
+    // Listen to browser back/forward buttons (idempotent registration)
+    function onPopState() {
       const paramGenre = new URLSearchParams(window.location.search).get('genre');
       selectedGenre = paramGenre ? normalize(paramGenre) : '';
       applyFilterAndSort();
-    });
+    }
+    window.removeEventListener('popstate', onPopState);
+    window.addEventListener('popstate', onPopState);
 
-    // Keyboard shortcut '/' to focus search
-    window.addEventListener('keydown', (e) => {
+    // Keyboard shortcut '/' to focus search (idempotent registration)
+    function onKeyDown(e: KeyboardEvent) {
       if (e.key === '/' && document.activeElement !== searchInput) {
         e.preventDefault();
         searchInput?.focus();
       }
-    });
+    }
+    window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onKeyDown);
 
     // Initial run
     applyFilterAndSort();

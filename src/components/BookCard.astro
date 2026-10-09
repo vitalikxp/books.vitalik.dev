@@ -32,7 +32,7 @@ const data = book.data;
         alt="" 
         loading="lazy"
         class="w-auto h-auto max-h-[312px] max-w-full object-contain object-bottom block rounded-[var(--radius-cover)]"
-        onerror="this.onerror=null; this.src='/covers/default-book.svg';"
+        data-fallback="/covers/default-book.svg"
       />
       <!-- Tactile spine lighting overlay -->
       <div class="book-spine-line"></div>
