@@ -204,7 +204,8 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
         let matchesGenre = true;
         if (selectedGenre) {
-          matchesGenre = genres.includes(selectedGenre);
+          const itemGenres = genres.split(',').map((g) => g.trim());
+          matchesGenre = itemGenres.includes(selectedGenre);
         }
 
         const isVisible = matchesSearch && matchesGenre;
