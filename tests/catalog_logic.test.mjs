@@ -98,6 +98,16 @@ test('3. Поиск по ISBN (очистка дефисов и пробелов
     assert.equal(matchesSearch(book, '978—5—04—110057—5'), true);
   });
 
+  await t.test('находит книгу по запросу с математическим минусом (U+2212)', () => {
+    assert.equal(matchesSearch(book, '978−5−04−110057−5'), true);
+  });
+
+  await t.test('находит книгу, если ISBN в объекте книги содержит математический минус (U+2212)', () => {
+    const bookWithMinus = { ...book, isbn: '978−5−04−110057−5' };
+    assert.equal(matchesSearch(bookWithMinus, '978-5-04-110057-5'), true);
+    assert.equal(matchesSearch(bookWithMinus, '9785041100575'), true);
+  });
+
   await t.test('находит книгу по запросу с префиксом ISBN', () => {
     assert.equal(matchesSearch(book, 'ISBN 978-5-04-110057-5'), true);
     assert.equal(matchesSearch(book, 'isbn: 978-5-04-110057-5'), true);
@@ -271,5 +281,76 @@ test('5. Компараторы сортировки (compareBooks)', async (t) 
 
     const sortedAuthor = [...identicalBooks].sort((a, b) => compareBooks(a, b, 'author'));
     assert.deepEqual(sortedAuthor.map((b) => b.id), ['b-a', 'b-z']);
+  });
+
+  await t.test('тай-брейк по id в «recent» при одинаковых added, year и title', () => {
+    const identicalRecent = [
+      { id: 'book-z', title: 'Одинаковая книга', author: 'Автор', added: 1500, year: 2021 },
+      { id: 'book-a', title: 'Одинаковая книга', author: 'Автор', added: 1500, year: 2021 },
+    ];
+    const sortedRecent = [...identicalRecent].sort((a, b) => compareBooks(a, b, 'recent'));
+    assert.deepEqual(sortedRecent.map((b) => b.id), ['book-a', 'book-z']);
+  });
+
+  await t.test('тай-брейк по автору в «title» при одинаковых названиях', () => {
+    const sameTitleBooks = [
+      { id: 'b-chekhov', title: 'Избранное', author: 'Чехов Антон' },
+      { id: 'b-bunin', title: 'Избранное', author: 'Бунин Иван' },
+      { id: 'b-dostoevsky', title: 'Избранное', author: 'Достоевский Федор' },
+    ];
+    const sorted = [...sameTitleBooks].sort((a, b) => compareBooks(a, b, 'title'));
+    assert.deepEqual(sorted.map((b) => b.id), ['b-bunin', 'b-dostoevsky', 'b-chekhov']);
+  });
+
+  await t.test('детерминированная сортировка при нечисловых / NaN значениях added и year', () => {
+    const dirtyBooks = [
+      { id: 'b-valid', title: 'Азбука', added: 500, year: 2020 },
+      { id: 'b-nan-added-2', title: 'Ярмарка', added: 'not-a-number', year: 2020 },
+      { id: 'b-nan-added-1', title: 'Басни', added: NaN, year: 2020 },
+      { id: 'b-nan-year', title: 'Гармония', added: 0, year: 'invalid-year' },
+    ];
+    const sortedRecent = [...dirtyBooks].sort((a, b) => compareBooks(a, b, 'recent'));
+    assert.deepEqual(sortedRecent.map((b) => b.id), [
+      'b-valid',
+      'b-nan-added-1',
+      'b-nan-added-2',
+      'b-nan-year',
+    ]);
+  });
+});
+
+test('6. Защитная обработка null / undefined объектов книг', async (t) => {
+  await t.test('matchesSearch возвращает false для null и undefined', () => {
+    assert.equal(matchesSearch(null, 'поиск'), false);
+    assert.equal(matchesSearch(undefined, 'поиск'), false);
+    assert.equal(matchesSearch(null, ''), false);
+    assert.equal(matchesSearch(undefined, ''), false);
+  });
+
+  await t.test('matchesGenre корректно обрабатывает null и undefined', () => {
+    assert.equal(matchesGenre(null, 'дизайн'), false);
+    assert.equal(matchesGenre(undefined, 'дизайн'), false);
+    assert.equal(matchesGenre(null, ''), true);
+    assert.equal(matchesGenre(undefined, ''), true);
+  });
+
+  await t.test('matchesFilter возвращает false для null и undefined', () => {
+    assert.equal(matchesFilter(null, 'поиск', 'дизайн'), false);
+    assert.equal(matchesFilter(undefined, 'поиск', 'дизайн'), false);
+    assert.equal(matchesFilter(null, '', ''), false);
+    assert.equal(matchesFilter(undefined, '', ''), false);
+  });
+
+  await t.test('compareBooks устойчив к null и undefined аргументам', () => {
+    const sample = { id: 'sample', title: 'Книга', author: 'Автор', added: 100, year: 2020 };
+    assert.doesNotThrow(() => compareBooks(null, null, 'recent'));
+    assert.doesNotThrow(() => compareBooks(null, sample, 'recent'));
+    assert.doesNotThrow(() => compareBooks(sample, null, 'recent'));
+    assert.doesNotThrow(() => compareBooks(undefined, sample, 'title'));
+    assert.doesNotThrow(() => compareBooks(sample, undefined, 'author'));
+
+    assert.equal(compareBooks(null, null, 'recent'), 0);
+    assert.equal(compareBooks(null, null, 'title'), 0);
+    assert.equal(compareBooks(null, null, 'author'), 0);
   });
 });

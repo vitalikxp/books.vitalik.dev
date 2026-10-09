@@ -21,15 +21,15 @@ const sortedBooks = [...allBooks].sort((a, b) => {
   return compareBooks(
     {
       id: a.id,
-      title: a.data.title,
-      author: a.data.author,
+      title: a.data.title.toLowerCase(),
+      author: a.data.author.toLowerCase(),
       added: a.data.addedAt ? new Date(a.data.addedAt).getTime() : 0,
       year: a.data.year || 0,
     },
     {
       id: b.id,
-      title: b.data.title,
-      author: b.data.author,
+      title: b.data.title.toLowerCase(),
+      author: b.data.author.toLowerCase(),
       added: b.data.addedAt ? new Date(b.data.addedAt).getTime() : 0,
       year: b.data.year || 0,
     },
@@ -56,7 +56,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
           id="catalog-search"
           placeholder="Название, автор или ISBN"
           autocomplete="off"
-          class="w-full h-[48px] pl-12 pr-12 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] text-[16px] text-[var(--color-text)] placeholder-[var(--color-placeholder)] focus:border-[var(--color-primary)] focus:outline-none transition-colors"
+          class="w-full h-[48px] pl-12 pr-12 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] text-[16px] text-[var(--color-text)] placeholder-[var(--color-placeholder)] focus:border-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-2 transition-colors"
         />
         <button
           type="button"
@@ -118,7 +118,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         <div class="relative flex-1">
           <select
             id="catalog-sort-mobile"
-            class="w-full h-[48px] pl-3.5 pr-10 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] text-[16px] text-[var(--color-text)] focus:border-[var(--color-primary)] focus:outline-none transition-colors appearance-none cursor-pointer"
+            class="w-full h-[48px] pl-3.5 pr-10 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] text-[16px] text-[var(--color-text)] focus:border-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-2 transition-colors appearance-none cursor-pointer"
           >
             <option value="recent">Недавно</option>
             <option value="title">По названию</option>
@@ -138,7 +138,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     >
       <div class="flex items-center gap-2 min-w-0 pl-1">
         <span class="text-[14px] text-[var(--color-muted)] shrink-0">Ярлык:</span>
-        <span id="mobile-active-genre-name" class="text-[15px] font-medium text-[var(--color-heading)] truncate"></span>
+        <span id="mobile-active-genre-name" class="text-[15px] font-medium text-[var(--color-heading)] break-words"></span>
       </div>
       <button
         type="button"
@@ -171,7 +171,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--color-hover-surface)] flex items-center justify-center text-[var(--color-muted)]">
           <BookOpen class="w-8 h-8 stroke-[1.5]" />
         </div>
-        <h3 id="empty-title" class="font-['Lora'] text-[24px] font-medium text-[var(--color-heading)] mb-2">
+        <h3 id="empty-title" class="font-['Inter'] text-[20px] font-semibold leading-[28px] text-[var(--color-heading)] mb-2">
           Книги не найдены
         </h3>
         <p id="empty-description" class="text-[15px] text-[var(--color-muted)] max-w-md mx-auto mb-6">
@@ -528,10 +528,15 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         syncUrlGenre();
         applyFilterAndSort();
 
-        // Close mobile drawer if open
+        // Close mobile drawer if open and focus main content (IMP-06)
         const drawer = document.getElementById('mobile-drawer');
         if (drawer && !drawer.classList.contains('-translate-x-full')) {
-          document.getElementById('close-drawer-btn')?.click();
+          if (typeof (window as any).closeDrawer === 'function') {
+            (window as any).closeDrawer('main');
+          } else {
+            document.getElementById('close-drawer-btn')?.click();
+            document.getElementById('main-content')?.focus();
+          }
         }
       });
     });

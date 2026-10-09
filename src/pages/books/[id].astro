@@ -41,7 +41,7 @@ if (data.status === 'reading') {
       <a 
         href="/" 
         id="back-to-catalog-btn"
-        class="inline-flex items-center gap-2 text-[15px] font-medium text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors group"
+        class="inline-flex items-center gap-2 min-h-[44px] min-w-[44px] py-2 text-[15px] font-medium text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors group"
       >
         <ArrowLeft class="w-4 h-4 stroke-[2] transition-transform group-hover:-translate-x-1" />
         <span>Вернуться в каталог</span>
@@ -99,9 +99,7 @@ if (data.status === 'reading') {
         )}
 
         <!-- Author in Inter -->
-        <p class="text-[20px] font-medium text-[var(--color-muted)] mb-8">
-          {data.author}
-        </p>
+        <p class="text-[20px] font-medium text-[var(--color-muted)] mb-8">{data.author || 'Автор не указан'}</p>
 
         <!-- Metadata Grid -->
         {(data.year || data.publisher || data.pages || data.isbn) && (

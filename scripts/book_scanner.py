@@ -34,7 +34,7 @@ TRANSLIT_DICT = {
 }
 
 def slugify(text: str) -> str:
-    text = text.lower().strip()
+    text = (text or '').lower().strip()
     res = []
     for char in text:
         if char in TRANSLIT_DICT:
@@ -44,7 +44,8 @@ def slugify(text: str) -> str:
         else:
             res.append(' ')
     slug = re.sub(r'[-\s_]+', '-', ''.join(res)).strip('-')
-    return slug[:60].rstrip('-') if slug else "book"
+    final_slug = slug[:60].rstrip('-')
+    return final_slug if final_slug else "book"
 
 def fetch_json(url: str):
     headers = {
@@ -126,7 +127,7 @@ def download_image(url: str, dest_path: Path) -> bool:
         return False
 
 def search_google_books(query: str, isbn: str = None):
-    clean_isbn = re.sub(r'(?i)^isbn[:\s]*|[-\s\u2010-\u2015]', '', isbn or '')
+    clean_isbn = re.sub(r'(?i)^isbn[:\s]*|[-\s\u2010-\u2015\u2212]', '', isbn or '')
     q = f"isbn:{clean_isbn}" if clean_isbn else query
     encoded_q = urllib.parse.quote(q)
     url = f"https://www.googleapis.com/books/v1/volumes?q={encoded_q}&maxResults=3&langRestrict=ru"
@@ -181,7 +182,7 @@ def search_google_books(query: str, isbn: str = None):
     }
 
 def search_open_library(query: str, isbn: str = None):
-    clean_isbn = re.sub(r'(?i)^isbn[:\s]*|[-\s\u2010-\u2015]', '', isbn or '')
+    clean_isbn = re.sub(r'(?i)^isbn[:\s]*|[-\s\u2010-\u2015\u2212]', '', isbn or '')
     q = clean_isbn if clean_isbn else query
     encoded_q = urllib.parse.quote(q)
     url = f"https://openlibrary.org/search.json?q={encoded_q}&limit=3"
@@ -265,8 +266,14 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
         if custom_cover:
             book_info['cover_url'] = custom_cover
 
-    final_title = book_info['title']
-    final_author = book_info['author']
+    final_title = (book_info.get('title') or title or search_q or 'Без названия').strip()
+    if not final_title:
+        final_title = 'Без названия'
+    final_author = (book_info.get('author') or author or 'Неизвестный автор').strip()
+    if not final_author:
+        final_author = 'Неизвестный автор'
+    book_info['title'] = final_title
+    book_info['author'] = final_author
     slug = f"{slugify(final_author)}-{slugify(final_title)}"
 
     md_file = BOOKS_DIR / f"{slug}.md"
@@ -335,7 +342,7 @@ author: {json.dumps(final_author, ensure_ascii=False)}
             elif (INCOMING_DIR / p.name).exists():
                 p = INCOMING_DIR / p.name
 
-        if p.exists():
+        if p.exists() and p.is_file():
             PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
             if p.resolve().parent == PROCESSED_DIR.resolve():
                 print(f"[*] Исходное фото уже находится в {PROCESSED_DIR.name}/, перемещение пропущено")
@@ -354,6 +361,8 @@ author: {json.dumps(final_author, ensure_ascii=False)}
                 except ValueError:
                     rel_dest = dest
                 print(f"[✓] Исходное фото перемещено в {rel_dest}")
+        elif p.exists():
+            print(f"[!] Внимание: указанный путь не является файлом фотографии: {photo_path}", file=sys.stderr)
         else:
             print(f"[!] Внимание: файл фотографии не найден: {photo_path}", file=sys.stderr)
 

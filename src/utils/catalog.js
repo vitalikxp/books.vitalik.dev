@@ -18,6 +18,7 @@ export function normalize(text) {
  * @returns {boolean}
  */
 export function matchesSearch(book, searchQuery) {
+  if (!book) return false;
   if (!searchQuery) return true;
   const normalizedQuery = normalize(searchQuery);
   if (!normalizedQuery) return true;
@@ -26,8 +27,8 @@ export function matchesSearch(book, searchQuery) {
   const author = normalize(book.author || '');
   const isbn = normalize(book.isbn || '');
 
-  const cleanIsbn = isbn.replace(/^isbn[:\s]*/i, '').replace(/[-\s\u2010-\u2015]/g, '');
-  const cleanQuery = normalizedQuery.replace(/^isbn[:\s]*/i, '').replace(/[-\s\u2010-\u2015]/g, '');
+  const cleanIsbn = isbn.replace(/^isbn[:\s]*/i, '').replace(/[-\s\u2010-\u2015\u2212]/g, '');
+  const cleanQuery = normalizedQuery.replace(/^isbn[:\s]*/i, '').replace(/[-\s\u2010-\u2015\u2212]/g, '');
   const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
 
   const matchesAllWords = queryWords.length > 0 && queryWords.every(
@@ -45,6 +46,7 @@ export function matchesSearch(book, searchQuery) {
  * @returns {boolean}
  */
 export function matchesGenre(book, selectedGenre) {
+  if (!book) return !selectedGenre;
   if (!selectedGenre) return true;
   const normalizedGenre = normalize(selectedGenre);
   if (!normalizedGenre) return true;
@@ -67,6 +69,7 @@ export function matchesGenre(book, selectedGenre) {
  * @returns {boolean}
  */
 export function matchesFilter(book, searchQuery, selectedGenre) {
+  if (!book) return false;
   return matchesSearch(book, searchQuery) && matchesGenre(book, selectedGenre);
 }
 
@@ -80,6 +83,9 @@ export function matchesFilter(book, searchQuery, selectedGenre) {
  * @returns {number}
  */
 export function compareBooks(a, b, sortMode = 'recent') {
+  a = a || {};
+  b = b || {};
+
   if (sortMode === 'title') {
     const titleDiff = (a.title || '').localeCompare(b.title || '', 'ru');
     if (titleDiff !== 0) return titleDiff;
@@ -100,18 +106,20 @@ export function compareBooks(a, b, sortMode = 'recent') {
     return (a.id || '').localeCompare(b.id || '');
   }
 
-  // "recent" mode: sort by date added descending (DESIGN.md 8.2), tie-breakers: year desc, title asc
-  const addedA = typeof a.added === 'number' ? a.added : parseInt(String(a.added || 0), 10);
-  const addedB = typeof b.added === 'number' ? b.added : parseInt(String(b.added || 0), 10);
-  if (addedB !== addedA) {
-    return addedB - addedA;
-  }
+  // "recent" mode: sort by date added descending (DESIGN.md 8.2), tie-breakers: year desc, title asc, id asc
+  const parsedAddedA = typeof a.added === 'number' ? a.added : parseInt(String(a.added || 0), 10);
+  const addedA = Number.isFinite(parsedAddedA) ? parsedAddedA : 0;
+  const parsedAddedB = typeof b.added === 'number' ? b.added : parseInt(String(b.added || 0), 10);
+  const addedB = Number.isFinite(parsedAddedB) ? parsedAddedB : 0;
+  if (addedB !== addedA) return addedB - addedA;
 
-  const yearA = typeof a.year === 'number' ? a.year : parseInt(String(a.year || 0), 10);
-  const yearB = typeof b.year === 'number' ? b.year : parseInt(String(b.year || 0), 10);
-  if (yearB !== yearA) {
-    return yearB - yearA;
-  }
+  const parsedYearA = typeof a.year === 'number' ? a.year : parseInt(String(a.year || 0), 10);
+  const yearA = Number.isFinite(parsedYearA) ? parsedYearA : 0;
+  const parsedYearB = typeof b.year === 'number' ? b.year : parseInt(String(b.year || 0), 10);
+  const yearB = Number.isFinite(parsedYearB) ? parsedYearB : 0;
+  if (yearB !== yearA) return yearB - yearA;
 
-  return (a.title || '').localeCompare(b.title || '', 'ru');
+  const titleDiff = (a.title || '').localeCompare(b.title || '', 'ru');
+  if (titleDiff !== 0) return titleDiff;
+  return (a.id || '').localeCompare(b.id || '');
 }

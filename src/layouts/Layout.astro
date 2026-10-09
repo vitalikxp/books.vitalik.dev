@@ -23,7 +23,7 @@ allBooks.forEach((b) => {
   b.data.genres.forEach((g) => {
     const trimmed = (g || '').trim();
     if (trimmed) {
-      const key = trimmed.toLowerCase();
+      const key = trimmed.toLowerCase().replace(/ё/g, 'е');
       const existing = genreMap.get(key);
       if (existing) {
         existing.count += 1;
@@ -169,7 +169,7 @@ const genres = Array.from(genreMap.values())
       </div>
 
       <!-- Main Catalog & Pages Area -->
-      <main id="main-content" tabindex="-1" class="flex-1 min-w-0 bg-[var(--color-page)] focus:outline-none">
+      <main id="main-content" tabindex="-1" aria-label="Книги" class="flex-1 min-w-0 bg-[var(--color-page)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-3 rounded-lg">
         <slot />
       </main>
     </div>
@@ -207,7 +207,7 @@ const genres = Array.from(genreMap.values())
           document.body.style.overflow = 'hidden';
         }
 
-        function closeDrawer() {
+        function closeDrawer(focusTarget: 'button' | 'main' = 'button') {
           if (!drawer || !drawerOverlay) return;
           if (openDrawerTimeout) {
             clearTimeout(openDrawerTimeout);
@@ -225,16 +225,26 @@ const genres = Array.from(genreMap.values())
             document.body.style.overflow = '';
             closeDrawerTimeout = undefined;
           }, 250);
-          openDrawerBtn?.focus();
+          if (focusTarget === 'main') {
+            document.getElementById('main-content')?.focus();
+          } else {
+            openDrawerBtn?.focus();
+          }
         }
 
+        (window as any).closeDrawer = closeDrawer;
+
         openDrawerBtn?.addEventListener('click', openDrawer);
-        closeDrawerBtn?.addEventListener('click', closeDrawer);
-        drawerOverlay?.addEventListener('click', closeDrawer);
+        closeDrawerBtn?.addEventListener('click', () => closeDrawer('button'));
+        drawerOverlay?.addEventListener('click', () => closeDrawer('button'));
+
+        window.matchMedia('(min-width: 1024px)').addEventListener('change', (e) => {
+          if (e.matches) closeDrawer();
+        });
 
         function onEscapeKey(e: KeyboardEvent) {
           if (e.key === 'Escape' && drawer && !drawer.hasAttribute('inert')) {
-            closeDrawer();
+            closeDrawer('button');
           }
         }
         window.addEventListener('keydown', onEscapeKey);
