@@ -4,28 +4,46 @@
   :root {
     color-scheme: light;
 
-    /* Palette tokens from DESIGN.md */
-    --color-page: #f3eee6;
-    --color-sidebar: #f2eee5;
-    --color-surface: #faf7f1;
-    --color-heading: #181a17;
-    --color-text: #292e29;
-    --color-muted: #656a62;
+    /* Semantic tokens (Light Theme - default) from DESIGN.md 5.2 */
+    --color-page: #f2ece4;
+    --color-sidebar: #f1ece3;
+    --color-surface: #f9f6f0;
+    --color-surface-raised: #fffdf8;
+    --color-heading: #232821;
+    --color-text: #2f342f;
+    --color-muted: #60675d;
     --color-placeholder: #6c7067;
-    --color-line: #d9d4ca;
-    --color-control-border: #858b7c;
-    --color-primary: #3c5144;
-    --color-primary-hover: #314638;
-    --color-primary-active: #273a2d;
-    --color-on-primary: #ffffff;
-    --color-hover-surface: #e7e8dd;
+    --color-line: #d8d4cb;
+    --color-control-border: #7f8776;
+    --color-primary: #405348;
+    --color-primary-hover: #354a3d;
+    --color-primary-active: #2b4033;
+    --color-on-primary: #f7f8f3;
+    --color-hover-surface: #e5e6dc;
+    --color-tag-bg: #e5e6dc;
+    --color-tag-text: #364033;
+    --color-tag-border: #cdd2c5;
+    --color-focus: #315c43;
+    --color-error: #a23e32;
+    --color-error-bg: #f8e5df;
+    --color-disabled-bg: #e7e4dd;
+    --color-disabled-text: #757b71;
+    --color-skeleton: #deded4;
+    --color-cover-edge: #d4d5cd;
+
+    /* Reading status tokens for book detail page */
     --color-status-reading: #d0ddc9;
     --color-status-read: #cfddcb;
     --color-status-planned: #efd7a5;
     --color-status-loan: #e8bea5;
     --color-status-neutral: #e2ded5;
     --color-status-text: #24362b;
-    --color-danger: #9f3d32;
+
+    /* Shadows and Scrim */
+    --shadow-cover: 0 4px 10px rgb(42 38 30 / 16%);
+    --shadow-cover-hover: 0 6px 14px rgb(42 38 30 / 22%);
+    --shadow-popover: 0 8px 24px rgb(42 38 30 / 14%);
+    --color-scrim: rgb(20 25 19 / 36%);
 
     /* Typography families */
     --font-display: "Lora", Georgia, "Times New Roman", serif;
@@ -40,9 +58,8 @@
     --space-6: 24px;
     --space-8: 32px;
     --space-10: 40px;
+    --space-11: 44px;
     --space-12: 48px;
-    --space-14: 56px;
-    --space-16: 64px;
 
     /* Radii */
     --radius-cover: 4px;
@@ -51,22 +68,117 @@
     --radius-pill: 999px;
 
     /* Layout metrics */
-    --sidebar-width: 312px;
-    --content-padding: 40px;
-    --content-max-width: 1280px;
+    --sidebar-width: 310px;
+    --content-max-width: 1200px;
+    --content-padding: 32px;
     --catalog-columns: 4;
-    --catalog-gap: 56px;
-    --cover-ratio: 4 / 5;
+    --catalog-column-gap: 48px;
+    --catalog-row-gap: 40px;
 
-    --control-height: 44px;
+    --cover-width: 220px;
+    --cover-height: 312px;
+    --cover-ratio: 55 / 78;
+
     --search-height: 48px;
-    --primary-button-height: 52px;
+    --sort-height: 48px;
+    --control-min-height: 44px;
+    --nav-row-min-height: 44px;
+    --tag-min-height: 22px;
 
-    /* Shadows and Focus */
-    --shadow-cover: 0 4px 10px rgb(42 38 30 / 16%);
-    --shadow-popover: 0 8px 24px rgb(42 38 30 / 12%);
-    --focus-ring: 3px solid #3c5144;
+    /* Focus & transitions */
+    --focus-ring: 3px solid var(--color-focus);
     --duration-fast: 150ms;
+    --duration-panel: 180ms;
+  }
+
+  /* Automatic dark theme based on system prefers-color-scheme */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+
+      --color-page: #191d18;
+      --color-sidebar: #1e231d;
+      --color-surface: #20251e;
+      --color-surface-raised: #282f25;
+      --color-heading: #efefea;
+      --color-text: #e8e9e1;
+      --color-muted: #b3b8ac;
+      --color-placeholder: #a8afa1;
+      --color-line: #343c30;
+      --color-control-border: #75826e;
+      --color-primary: #597660;
+      --color-primary-hover: #5b7863;
+      --color-primary-active: #4c6653;
+      --color-on-primary: #f7f8f3;
+      --color-hover-surface: #2b3428;
+      --color-tag-bg: #2d3529;
+      --color-tag-text: #d0d8c8;
+      --color-tag-border: #4b5844;
+      --color-focus: #b7d4a8;
+      --color-error: #f0aca0;
+      --color-error-bg: #3c2723;
+      --color-disabled-bg: #282e24;
+      --color-disabled-text: #87927d;
+      --color-skeleton: #30372c;
+      --color-cover-edge: #485341;
+
+      /* Reading status tokens for dark mode */
+      --color-status-reading: #2c4233;
+      --color-status-read: #2b3d30;
+      --color-status-planned: #4e3d23;
+      --color-status-loan: #4a3024;
+      --color-status-neutral: #30372c;
+      --color-status-text: #e8e9e1;
+
+      --shadow-cover: 0 4px 12px rgb(0 0 0 / 24%);
+      --shadow-cover-hover: 0 6px 16px rgb(0 0 0 / 32%);
+      --shadow-popover: 0 10px 28px rgb(0 0 0 / 36%);
+      --color-scrim: rgb(0 0 0 / 56%);
+    }
+  }
+
+  /* Explicit data-theme="dark" override if set */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --color-page: #191d18;
+    --color-sidebar: #1e231d;
+    --color-surface: #20251e;
+    --color-surface-raised: #282f25;
+    --color-heading: #efefea;
+    --color-text: #e8e9e1;
+    --color-muted: #b3b8ac;
+    --color-placeholder: #a8afa1;
+    --color-line: #343c30;
+    --color-control-border: #75826e;
+    --color-primary: #597660;
+    --color-primary-hover: #5b7863;
+    --color-primary-active: #4c6653;
+    --color-on-primary: #f7f8f3;
+    --color-hover-surface: #2b3428;
+    --color-tag-bg: #2d3529;
+    --color-tag-text: #d0d8c8;
+    --color-tag-border: #4b5844;
+    --color-focus: #b7d4a8;
+    --color-error: #f0aca0;
+    --color-error-bg: #3c2723;
+    --color-disabled-bg: #282e24;
+    --color-disabled-text: #87927d;
+    --color-skeleton: #30372c;
+    --color-cover-edge: #485341;
+
+    /* Reading status tokens for dark mode */
+    --color-status-reading: #2c4233;
+    --color-status-read: #2b3d30;
+    --color-status-planned: #4e3d23;
+    --color-status-loan: #4a3024;
+    --color-status-neutral: #30372c;
+    --color-status-text: #e8e9e1;
+
+    --shadow-cover: 0 4px 12px rgb(0 0 0 / 24%);
+    --shadow-cover-hover: 0 6px 16px rgb(0 0 0 / 32%);
+    --shadow-popover: 0 10px 28px rgb(0 0 0 / 36%);
+    --color-scrim: rgb(0 0 0 / 56%);
   }
 }
 
@@ -99,10 +211,12 @@ body {
   position: relative;
   overflow: hidden;
   transition: transform var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  outline: 1px solid var(--color-cover-edge);
+  outline-offset: -1px;
 }
 
 .book-cover-container:hover {
-  box-shadow: 0 8px 18px rgb(42 38 30 / 22%);
+  box-shadow: var(--shadow-cover-hover);
 }
 
 .book-spine-line {

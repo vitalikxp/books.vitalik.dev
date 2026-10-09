@@ -14,9 +14,16 @@ import {
 
 const allBooks = await getCollection('books');
 
-// Sort by addedAt descending by default
+// Sort by year descending by default (from newer to older editions)
 const sortedBooks = [...allBooks].sort((a, b) => {
-  return new Date(b.data.addedAt).getTime() - new Date(a.data.addedAt).getTime();
+  const yearA = a.data.year || 0;
+  const yearB = b.data.year || 0;
+  if (yearB !== yearA) {
+    return yearB - yearA;
+  }
+  const addedDiff = new Date(b.data.addedAt).getTime() - new Date(a.data.addedAt).getTime();
+  if (addedDiff !== 0) return addedDiff;
+  return a.data.title.localeCompare(b.data.title, 'ru');
 });
 ---
 
@@ -58,7 +65,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
       >
         <button
           type="button"
-          class="sort-btn h-full px-3 sm:px-3.5 rounded-[6px] text-[14px] font-medium transition-colors cursor-pointer flex items-center gap-2 bg-[var(--color-primary)] text-white shadow-xs"
+          class="sort-btn h-full px-3 sm:px-3.5 rounded-[6px] text-[14px] font-medium transition-colors cursor-pointer flex items-center gap-2 bg-[var(--color-primary)] text-[var(--color-on-primary)] shadow-xs"
           data-sort="recent"
           title="Недавно добавлены"
           aria-pressed="true"
@@ -115,7 +122,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         <button
           type="button"
           id="reset-all-btn"
-          class="h-[46px] px-6 rounded-[var(--radius-control)] bg-[var(--color-primary)] text-white text-[15px] font-medium hover:bg-[var(--color-primary-hover)] transition-colors cursor-pointer inline-flex items-center gap-2"
+          class="h-[46px] px-6 rounded-[var(--radius-control)] bg-[var(--color-primary)] text-[var(--color-on-primary)] text-[15px] font-medium hover:bg-[var(--color-primary-hover)] transition-colors cursor-pointer inline-flex items-center gap-2"
         >
           <RotateCcw class="w-4 h-4 stroke-[2]" />
           <span>Сбросить поиск и ярлыки</span>
@@ -161,19 +168,19 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         const isActive = (selectedGenre === '' && genreVal === '') || (selectedGenre !== '' && genreVal === selectedGenre);
 
         if (isActive) {
-          btn.classList.add('bg-[var(--color-primary)]', 'text-white');
+          btn.classList.add('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]');
           btn.classList.remove('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
-          countSpan?.classList.add('text-white/80');
+          countSpan?.classList.add('text-[var(--color-on-primary)]');
           countSpan?.classList.remove('text-[var(--color-muted)]');
           iconWrap?.classList.remove('text-[var(--color-muted)]');
-          iconWrap?.classList.add('text-white/90');
+          iconWrap?.classList.add('text-[var(--color-on-primary)]');
         } else {
-          btn.classList.remove('bg-[var(--color-primary)]', 'text-white');
+          btn.classList.remove('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]');
           btn.classList.add('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
-          countSpan?.classList.remove('text-white/80');
+          countSpan?.classList.remove('text-[var(--color-on-primary)]');
           countSpan?.classList.add('text-[var(--color-muted)]');
           iconWrap?.classList.add('text-[var(--color-muted)]');
-          iconWrap?.classList.remove('text-white/90');
+          iconWrap?.classList.remove('text-[var(--color-on-primary)]');
         }
       });
     }
@@ -217,9 +224,18 @@ const sortedBooks = [...allBooks].sort((a, b) => {
           } else if (currentSort === 'author') {
             return (a.dataset.author || '').localeCompare(b.dataset.author || '', 'ru');
           } else {
+            // "recent" mode: sort by publication year descending (newest to oldest)
+            const yearA = parseInt(a.dataset.year || '0', 10);
+            const yearB = parseInt(b.dataset.year || '0', 10);
+            if (yearB !== yearA) {
+              return yearB - yearA;
+            }
             const addedA = parseInt(a.dataset.added || '0', 10);
             const addedB = parseInt(b.dataset.added || '0', 10);
-            return addedB - addedA;
+            if (addedB !== addedA) {
+              return addedB - addedA;
+            }
+            return (a.dataset.title || '').localeCompare(b.dataset.title || '', 'ru');
           }
         });
         gridItems.forEach((item) => catalogGrid.appendChild(item));
@@ -279,11 +295,11 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         sortBtns.forEach((b) => {
           const isCurrent = (b as HTMLElement).dataset.sort === currentSort;
           if (isCurrent) {
-            b.classList.add('bg-[var(--color-primary)]', 'text-white', 'shadow-xs');
+            b.classList.add('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]', 'shadow-xs');
             b.classList.remove('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
             b.setAttribute('aria-pressed', 'true');
           } else {
-            b.classList.remove('bg-[var(--color-primary)]', 'text-white', 'shadow-xs');
+            b.classList.remove('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]', 'shadow-xs');
             b.classList.add('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
             b.setAttribute('aria-pressed', 'false');
           }

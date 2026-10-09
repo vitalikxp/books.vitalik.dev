@@ -18,9 +18,10 @@ const data = book.data;
   data-isbn={(data.isbn || '').replace(/[-\s]/g, '').toLowerCase()}
   data-genres={data.genres.map((g: string) => g.toLowerCase()).join(',')}
   data-added={new Date(data.addedAt).getTime()}
+  data-year={data.year || 0}
 >
-  <!-- Book Cover Container: Ratio 4/5 on desktop, natural on mobile, aligned bottom, soft shadow -->
-  <div class="w-full relative sm:aspect-[4/5] flex items-end justify-center mb-3">
+  <!-- Book Cover Container: Ratio 55/78 on desktop (220x312), aligned bottom, soft shadow -->
+  <div class="w-full relative sm:aspect-[55/78] flex items-end justify-center mb-3">
     <a 
       href={`/books/${book.id}`}
       class="block relative max-w-full max-h-full book-cover-container transition-transform duration-150 focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
@@ -30,7 +31,7 @@ const data = book.data;
         src={data.cover} 
         alt="" 
         loading="lazy"
-        class="w-auto h-auto max-h-[310px] max-w-full object-contain object-bottom block rounded-[var(--radius-cover)]"
+        class="w-auto h-auto max-h-[312px] max-w-full object-contain object-bottom block rounded-[var(--radius-cover)]"
         onerror="this.onerror=null; this.src='/covers/default-book.svg';"
       />
       <!-- Tactile spine lighting overlay -->
@@ -38,24 +39,24 @@ const data = book.data;
     </a>
   </div>
 
-  <!-- Title: Inter 18/24px, weight 600, max 2 lines -->
-  <h2 class="text-[18px] leading-[24px] font-semibold text-[var(--color-text)] line-clamp-2 mb-1 group-hover:text-[var(--color-primary)] transition-colors">
+  <!-- Title: Inter 18/24px, weight 600, max 2 lines (min-h-[48px] reserves 2 lines as per DESIGN.md 9.1) -->
+  <h2 class="text-[18px] leading-[24px] font-semibold text-[var(--color-text)] line-clamp-2 min-h-[48px] mb-1 group-hover:text-[var(--color-primary)] transition-colors">
     <a href={`/books/${book.id}`} class="hover:underline">
       {data.title}
     </a>
   </h2>
 
   <!-- Author: Inter 16/22px, weight 400, max 2 lines -->
-  <p class="text-[16px] leading-[22px] font-normal text-[var(--color-muted)] line-clamp-2 mb-2.5">
+  <p class="text-[16px] leading-[22px] font-normal text-[var(--color-muted)] line-clamp-2 mb-2">
     {data.author}
   </p>
 
-  <!-- Book Labels (Tags) -->
+  <!-- Book Labels (Tags) from DESIGN.md 9.3 (gap 6px = gap-1.5, fixed 8px margin after author) -->
   {data.genres && data.genres.length > 0 && (
-    <div class="flex flex-wrap gap-1.5 items-center mt-auto">
+    <div class="flex flex-wrap gap-1.5 items-center">
       {data.genres.map((genre: string) => (
-        <span class="inline-flex items-center gap-1.5 text-[12px] leading-[16px] font-medium px-2 py-0.5 rounded-[var(--radius-pill)] bg-[var(--color-hover-surface)] text-[var(--color-text)] border border-[var(--color-line)]">
-          <TagIcon tag={genre} class="w-3 h-3 stroke-[2] text-[var(--color-muted)] shrink-0" />
+        <span class="inline-flex items-center gap-1 text-[12px] leading-[16px] font-normal px-2 py-0.5 min-h-[22px] rounded-[var(--radius-pill)] bg-[var(--color-tag-bg)] text-[var(--color-tag-text)] border border-[var(--color-tag-border)]">
+          <TagIcon tag={genre} class="w-3 h-3 stroke-[2] shrink-0 opacity-80" />
           <span>{genre}</span>
         </span>
       ))}

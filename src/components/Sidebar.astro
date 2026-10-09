@@ -1,5 +1,5 @@
 ---
-import { BookOpen, X, Tag, Library } from '@lucide/astro';
+import { BookOpen, Tag, Library } from '@lucide/astro';
 import TagIcon from './TagIcon.astro';
 
 interface Props {
@@ -17,42 +17,33 @@ const isHome = Astro.url.pathname === '/';
 ---
 
 <aside 
-  class={`flex flex-col h-full bg-[var(--color-sidebar)] select-none ${isMobileDrawer ? 'w-full p-6' : 'w-[var(--sidebar-width)] p-6 lg:p-7 border-r border-[var(--color-line)]'}`}
+  class={`flex flex-col h-full bg-[var(--color-sidebar)] select-none ${isMobileDrawer ? 'w-full py-5 pl-4 pr-1' : 'w-[var(--sidebar-width)] p-6 lg:p-7 border-r border-[var(--color-line)]'}`}
   aria-label="Боковая навигация по библиотеке"
 >
-  <!-- Header: Logo / Branding -->
-  <div class="flex items-center justify-between mb-8 shrink-0">
-    <a 
-      href="/" 
-      class="flex items-center gap-3.5 group text-[var(--color-heading)] focus-visible:rounded-lg"
-      aria-label="Моя библиотека — главная страница"
-    >
-      <div class="text-[var(--color-heading)] group-hover:text-[var(--color-primary)] transition-colors">
-        <BookOpen class="w-8 h-8 stroke-[1.8]" />
-      </div>
-      <span class="font-['Lora'] text-[26px] leading-tight font-medium text-[var(--color-heading)] tracking-[-0.01em]">
-        Моя библиотека
-      </span>
-    </a>
-
-    {isMobileDrawer && (
-      <button 
-        type="button" 
-        id="close-drawer-btn" 
-        class="p-2 text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:bg-[var(--color-hover-surface)] rounded-lg transition-colors cursor-pointer"
-        aria-label="Закрыть меню"
+  <!-- Header: Logo / Branding (desktop only; on mobile it is redundant with top bar and backdrop click/tag selection closes the drawer) -->
+  {!isMobileDrawer && (
+    <div class="flex items-center justify-between mb-8 shrink-0">
+      <a 
+        href="/" 
+        class="flex items-center gap-3.5 group text-[var(--color-heading)] focus-visible:rounded-lg"
+        aria-label="Моя библиотека — главная страница"
       >
-        <X class="w-6 h-6 stroke-[1.8]" />
-      </button>
-    )}
-  </div>
+        <div class="text-[var(--color-heading)] group-hover:text-[var(--color-primary)] transition-colors">
+          <BookOpen class="w-8 h-8 stroke-[1.8]" />
+        </div>
+        <span class="font-['Lora'] text-[26px] leading-tight font-medium text-[var(--color-heading)] tracking-[-0.01em]">
+          Моя библиотека
+        </span>
+      </a>
+    </div>
+  )}
 
   <!-- Navigation items -->
-  <nav class="flex-1 overflow-y-auto pr-1 -mr-1 space-y-6" aria-label="Разделы каталога">
+  <nav class={`flex-1 overflow-y-auto space-y-6 ${isMobileDrawer ? 'pr-2' : 'pr-1 -mr-1'}`} aria-label="Разделы каталога">
     <!-- Tags Section in Sidebar -->
     {genres.length > 0 && (
       <div>
-        <div class="px-4 mb-2.5 text-[13px] font-medium tracking-[0.08em] text-[var(--color-muted)] uppercase flex items-center gap-2">
+        <div class="px-3 mb-2.5 text-[13px] font-medium tracking-[0.08em] text-[var(--color-muted)] uppercase flex items-center gap-2">
           <Tag class="w-3.5 h-3.5 stroke-[2]" />
           <span>ЯРЛЫКИ</span>
         </div>
@@ -64,7 +55,7 @@ const isHome = Astro.url.pathname === '/';
               data-nav-genre=""
               class={`nav-genre-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-[var(--radius-nav)] text-[15px] font-normal transition-colors cursor-pointer text-left group ${
                 isHome
-                  ? 'bg-[var(--color-primary)] text-white'
+                  ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)]'
                   : 'text-[var(--color-text)] hover:bg-[var(--color-hover-surface)]'
               }`}
             >
@@ -75,7 +66,7 @@ const isHome = Astro.url.pathname === '/';
                 <span class="truncate">Все книги</span>
               </div>
               {totalBooks > 0 && (
-                <span class={`genre-count font-mono text-[13px] shrink-0 ml-2 ${isHome ? 'opacity-80' : 'text-[var(--color-muted)] group-hover:text-[var(--color-text)]'}`}>
+                <span class={`genre-count font-mono text-[13px] shrink-0 ml-2 ${isHome ? 'text-[var(--color-on-primary)]' : 'text-[var(--color-muted)] group-hover:text-[var(--color-text)]'}`}>
                   {totalBooks}
                 </span>
               )}

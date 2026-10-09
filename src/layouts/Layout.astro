@@ -47,6 +47,23 @@ const genres = Array.from(genreCounts.entries())
 
     <title>{title} — Моя библиотека</title>
     <meta name="description" content={description} />
+
+    <!-- Synchronous early theme resolution from system preference (prevents FOUC) -->
+    <script is:inline>
+      (() => {
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        function updateTheme(e) {
+          const isDark = e ? e.matches : mq.matches;
+          document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+        }
+        updateTheme();
+        if (mq.addEventListener) {
+          mq.addEventListener('change', updateTheme);
+        } else if (mq.addListener) {
+          mq.addListener(updateTheme);
+        }
+      })();
+    </script>
   </head>
   <body class="bg-[var(--color-page)] text-[var(--color-text)] font-sans antialiased min-h-screen relative selection:bg-[#3c5144]/20 selection:text-inherit">
     <!-- Tactile Paper Grain Overlay -->
