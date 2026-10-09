@@ -24,8 +24,9 @@ const data = book.data;
   <div class="w-full relative sm:aspect-[55/78] flex items-end justify-center mb-3">
     <a 
       href={`/books/${book.id}`}
+      tabindex="-1"
+      aria-hidden="true"
       class="block relative max-w-full max-h-full book-cover-container transition-transform duration-150 focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-      aria-label={`Открыть страницу книги «${data.title}» автора ${data.author}`}
     >
       <img 
         src={data.cover} 

@@ -1,5 +1,5 @@
 ---
-import { BookOpen, Tag, Library, X } from '@lucide/astro';
+import { BookOpen, Tag, Library, X, SunMoon } from '@lucide/astro';
 import TagIcon from './TagIcon.astro';
 
 interface Props {
@@ -105,5 +105,24 @@ const isHome = Astro.url.pathname === '/';
         </ul>
       </div>
     )}
+
+    <!-- Theme Selection (DESIGN.md 10.2) -->
+    <div class="pt-6 border-t border-[var(--color-line)] mt-6">
+      <label for={isMobileDrawer ? 'theme-select-mobile' : 'theme-select'} class="block text-[13px] font-medium tracking-[0.08em] text-[var(--color-muted)] uppercase mb-2 flex items-center gap-2">
+        <SunMoon class="w-3.5 h-3.5 stroke-[2]" />
+        <span>ТЕМА</span>
+      </label>
+      <div class="relative">
+        <select
+          id={isMobileDrawer ? 'theme-select-mobile' : 'theme-select'}
+          class="theme-select-input w-full min-h-[44px] px-3.5 py-2.5 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] text-[14px] text-[var(--color-text)] focus-visible:outline-none focus-visible:border-[var(--color-primary)] cursor-pointer transition-colors"
+          aria-label="Выбор цветовой темы"
+        >
+          <option value="system">Системная</option>
+          <option value="light">Светлая</option>
+          <option value="dark">Тёмная</option>
+        </select>
+      </div>
+    </div>
   </nav>
 </aside>

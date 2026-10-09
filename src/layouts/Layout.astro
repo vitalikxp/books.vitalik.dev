@@ -51,28 +51,48 @@ const genres = Array.from(genreCounts.entries())
     <title>{title} — Моя библиотека</title>
     <meta name="description" content={description} />
 
-    <!-- Synchronous early theme resolution from system preference (prevents FOUC) -->
+    <!-- Synchronous early theme resolution from localStorage and system preference (prevents FOUC) -->
     <script is:inline>
       (() => {
+        const key = 'my-library.theme';
+        const allowed = new Set(['system', 'light', 'dark']);
+        let preference = 'system';
+        try {
+          const saved = localStorage.getItem(key);
+          if (allowed.has(saved)) preference = saved;
+        } catch {}
+
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
-        function updateTheme(e) {
-          const isDark = e ? e.matches : mq.matches;
-          document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+        function resolveTheme(pref) {
+          if (pref === 'system') {
+            return mq.matches ? 'dark' : 'light';
+          }
+          return pref;
         }
-        updateTheme();
+
+        document.documentElement.dataset.theme = resolveTheme(preference);
+        document.documentElement.dataset.themePreference = preference;
+
+        function updateSystemTheme(e) {
+          const currentPref = document.documentElement.dataset.themePreference;
+          if (currentPref === 'system') {
+            document.documentElement.dataset.theme = e.matches ? 'dark' : 'light';
+          }
+        }
         if (mq.addEventListener) {
-          mq.addEventListener('change', updateTheme);
+          mq.addEventListener('change', updateSystemTheme);
         }
       })();
     </script>
 
-    <!-- Global image fallback listener -->
+    <!-- Global image fallback listener with loop guard -->
     <script is:inline>
       document.addEventListener(
         'error',
         (e) => {
           const el = e.target;
-          if (el && el.tagName === 'IMG' && el.dataset.fallback && el.src !== el.dataset.fallback) {
+          if (el && el.tagName === 'IMG' && el.dataset.fallback && !el.dataset.fallbackApplied) {
+            el.dataset.fallbackApplied = 'true';
             el.src = el.dataset.fallback;
           }
         },
@@ -81,8 +101,6 @@ const genres = Array.from(genreCounts.entries())
     </script>
   </head>
   <body class="bg-[var(--color-page)] text-[var(--color-text)] font-sans antialiased min-h-screen relative selection:bg-[var(--color-primary)]/25 selection:text-inherit">
-    <!-- Tactile Paper Grain Overlay -->
-    <div class="paper-texture" aria-hidden="true"></div>
 
     <!-- Skip link for keyboard accessibility -->
     <a 
@@ -123,7 +141,9 @@ const genres = Array.from(genreCounts.entries())
       id="mobile-drawer"
       class="fixed inset-y-0 left-0 z-50 w-[min(312px,88vw)] bg-[var(--color-sidebar)] shadow-2xl transform -translate-x-full transition-transform duration-250 ease-out lg:hidden"
       role="dialog"
+      aria-modal="true"
       aria-label="Боковая навигация"
+      inert
     >
       <Sidebar 
         totalBooks={totalBooks}
@@ -165,9 +185,11 @@ const genres = Array.from(genreCounts.entries())
             clearTimeout(closeDrawerTimeout);
             closeDrawerTimeout = undefined;
           }
+          drawer.removeAttribute('inert');
           drawerOverlay.classList.remove('hidden');
           setTimeout(() => {
             drawer.classList.remove('-translate-x-full');
+            closeDrawerBtn?.focus();
           }, 10);
           document.body.style.overflow = 'hidden';
         }
@@ -175,6 +197,7 @@ const genres = Array.from(genreCounts.entries())
         function closeDrawer() {
           if (!drawer || !drawerOverlay) return;
           drawer.classList.add('-translate-x-full');
+          drawer.setAttribute('inert', '');
           if (closeDrawerTimeout) {
             clearTimeout(closeDrawerTimeout);
           }
@@ -183,20 +206,41 @@ const genres = Array.from(genreCounts.entries())
             document.body.style.overflow = '';
             closeDrawerTimeout = undefined;
           }, 250);
+          openDrawerBtn?.focus();
         }
 
         openDrawerBtn?.addEventListener('click', openDrawer);
         closeDrawerBtn?.addEventListener('click', closeDrawer);
         drawerOverlay?.addEventListener('click', closeDrawer);
 
-        // Escape key handler (idempotent registration)
         function onEscapeKey(e: KeyboardEvent) {
-          if (e.key === 'Escape') {
+          if (e.key === 'Escape' && drawer && !drawer.hasAttribute('inert')) {
             closeDrawer();
           }
         }
-        window.removeEventListener('keydown', onEscapeKey);
         window.addEventListener('keydown', onEscapeKey);
+
+        // Theme controller: sync select elements with current preference and localStorage
+        const themeSelects = document.querySelectorAll('.theme-select-input') as NodeListOf<HTMLSelectElement>;
+        const currentPref = document.documentElement.dataset.themePreference || 'system';
+        themeSelects.forEach((sel) => {
+          sel.value = currentPref;
+          sel.addEventListener('change', (e) => {
+            const newPref = (e.target as HTMLSelectElement).value;
+            try {
+              localStorage.setItem('my-library.theme', newPref);
+            } catch {}
+            document.documentElement.dataset.themePreference = newPref;
+
+            const mq = window.matchMedia('(prefers-color-scheme: dark)');
+            const resolved = newPref === 'system' ? (mq.matches ? 'dark' : 'light') : newPref;
+            document.documentElement.dataset.theme = resolved;
+
+            themeSelects.forEach((other) => {
+              if (other !== sel) other.value = newPref;
+            });
+          });
+        });
       }
 
       initLayout();

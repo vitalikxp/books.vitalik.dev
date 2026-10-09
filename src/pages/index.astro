@@ -96,6 +96,9 @@ const sortedBooks = [...allBooks].sort((a, b) => {
       </div>
     </div>
 
+    <!-- Accessible Live Announcement Region (DESIGN.md 8.1) -->
+    <div id="catalog-live-feedback" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
     <!-- Catalog Content -->
     <div id="catalog-container">
       <!-- Grid View: 4 columns on desktop, gap 56px -->
@@ -142,6 +145,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     const emptyTitle = document.getElementById('empty-title');
     const emptyDesc = document.getElementById('empty-description');
     const catalogGrid = document.getElementById('catalog-grid');
+    const liveFeedback = document.getElementById('catalog-live-feedback');
 
     // Sort buttons
     const sortBtns = document.querySelectorAll('.sort-btn');
@@ -154,6 +158,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     const initialGenre = new URLSearchParams(window.location.search).get('genre');
     let selectedGenre = initialGenre ? normalize(initialGenre) : '';
     let currentSort = 'recent'; // recent, title, author
+    let searchDebounceTimer: number | undefined;
 
     function normalize(text: string): string {
       return text.toLowerCase().replace(/ё/g, 'е').trim();
@@ -201,9 +206,9 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         let matchesSearch = true;
         if (searchQuery) {
           const cleanQuery = searchQuery.replace(/[-\s]/g, '');
-          matchesSearch = title.includes(searchQuery) || 
-                          author.includes(searchQuery) || 
-                          (cleanQuery.length > 0 && isbn.includes(cleanQuery));
+          const queryWords = searchQuery.split(/\s+/).filter(Boolean);
+          const matchesAllWords = queryWords.every((word) => title.includes(word) || author.includes(word));
+          matchesSearch = matchesAllWords || (cleanQuery.length > 0 && isbn.includes(cleanQuery));
         }
 
         let matchesGenre = true;
@@ -273,24 +278,61 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         }
       }
 
+      // Accessible live feedback (DESIGN.md 8.1)
+      if (liveFeedback) {
+        if (visibleCount === 0) {
+          liveFeedback.textContent = 'Книги не найдены';
+        } else {
+          const mod10 = visibleCount % 10;
+          const mod100 = visibleCount % 100;
+          let word = 'книг';
+          if (mod100 < 11 || mod100 > 14) {
+            if (mod10 === 1) word = 'книга';
+            else if (mod10 >= 2 && mod10 <= 4) word = 'книги';
+          }
+          liveFeedback.textContent = `Найдено ${visibleCount} ${word}`;
+        }
+      }
+
       updateActiveNavUI();
     }
 
-    // Search events
+    // Search events with 250ms debounce and Enter instant trigger (DESIGN.md 8.1)
     searchInput?.addEventListener('input', (e) => {
-      searchQuery = normalize((e.target as HTMLInputElement).value);
+      const val = (e.target as HTMLInputElement).value;
       if (searchClearBtn) {
-        if (searchQuery) {
+        if (val.trim()) {
           searchClearBtn.classList.remove('hidden');
         } else {
           searchClearBtn.classList.add('hidden');
         }
       }
-      applyFilterAndSort();
+      if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer);
+      }
+      searchDebounceTimer = window.setTimeout(() => {
+        searchQuery = normalize(val);
+        applyFilterAndSort();
+      }, 250);
+    });
+
+    searchInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        if (searchDebounceTimer) {
+          clearTimeout(searchDebounceTimer);
+          searchDebounceTimer = undefined;
+        }
+        searchQuery = normalize((searchInput as HTMLInputElement).value);
+        applyFilterAndSort();
+      }
     });
 
     searchClearBtn?.addEventListener('click', () => {
       if (searchInput) {
+        if (searchDebounceTimer) {
+          clearTimeout(searchDebounceTimer);
+          searchDebounceTimer = undefined;
+        }
         searchInput.value = '';
         searchQuery = '';
         searchClearBtn.classList.add('hidden');
@@ -341,6 +383,10 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
     resetAllBtn?.addEventListener('click', () => {
       if (searchInput) {
+        if (searchDebounceTimer) {
+          clearTimeout(searchDebounceTimer);
+          searchDebounceTimer = undefined;
+        }
         searchInput.value = '';
         searchQuery = '';
         searchClearBtn?.classList.add('hidden');
@@ -383,9 +429,16 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     window.removeEventListener('popstate', onPopState);
     window.addEventListener('popstate', onPopState);
 
-    // Keyboard shortcut '/' to focus search (idempotent registration)
+    // Keyboard shortcut '/' to focus search without hijacking system combinations
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === '/' && document.activeElement !== searchInput) {
+      if (
+        e.key === '/' &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        document.activeElement !== searchInput &&
+        !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')
+      ) {
         e.preventDefault();
         searchInput?.focus();
       }

@@ -65,10 +65,24 @@ def download_image(url: str, dest_path: Path) -> bool:
     try:
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         with urllib.request.urlopen(req, timeout=15) as resp:
+            data = resp.read()
+            if not data or len(data) == 0:
+                print(f"[!] Пустой ответ сервера при скачивании обложки {url}", file=sys.stderr)
+                return False
             with open(dest_path, 'wb') as f:
-                f.write(resp.read())
-        return True
+                f.write(data)
+        if dest_path.exists() and dest_path.stat().st_size > 0:
+            return True
+        else:
+            if dest_path.exists():
+                dest_path.unlink()
+            return False
     except Exception as e:
+        if dest_path.exists():
+            try:
+                dest_path.unlink()
+            except Exception:
+                pass
         print(f"[!] Не удалось скачать обложку {url}: {e}", file=sys.stderr)
         return False
 
@@ -281,7 +295,7 @@ def main():
     parser.add_argument("--pages", type=int, help="Количество страниц")
     parser.add_argument("-g", "--genres", nargs="*", help="Список жанров через пробел")
     parser.add_argument("-d", "--desc", help="Описание или аннотация книги")
-    parser.add_argument("-s", "--status", choices=["read", "reading", "to-read"], default="read", help="Статус прочтения")
+    parser.add_argument("-s", "--status", choices=["read", "reading", "to-read", "planned", "neutral"], default="read", help="Статус прочтения")
     parser.add_argument("-r", "--rating", type=int, choices=[1, 2, 3, 4, 5], help="Оценка от 1 до 5")
     parser.add_argument("-p", "--photo", help="Путь к файлу фотографии из incoming_photos/")
     parser.add_argument("-c", "--cover", help="Прямой URL качественной обложки")
