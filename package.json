@@ -9,6 +9,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
+    "test": "node --test tests/*.test.mjs && python3 -m unittest discover tests",
     "scan": "python3 scripts/book_scanner.py"
   },
   "bugs": {

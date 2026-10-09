@@ -70,6 +70,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
           class="sort-btn h-full px-3 sm:px-3.5 rounded-[6px] text-[14px] font-medium transition-colors cursor-pointer flex items-center gap-2 bg-[var(--color-primary)] text-[var(--color-on-primary)] shadow-xs"
           data-sort="recent"
           title="Недавно добавлены"
+          aria-label="Сортировка: недавно добавленные"
           aria-pressed="true"
         >
           <Clock class="w-4 h-4 stroke-[2]" />
@@ -80,6 +81,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
           class="sort-btn h-full px-3 sm:px-3.5 rounded-[6px] text-[14px] font-medium transition-colors cursor-pointer flex items-center gap-2 text-[var(--color-text)] hover:bg-[var(--color-hover-surface)]"
           data-sort="title"
           title="По названию: А–Я"
+          aria-label="Сортировка по названию"
           aria-pressed="false"
         >
           <ArrowDownAZ class="w-4 h-4 stroke-[2]" />
@@ -90,6 +92,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
           class="sort-btn h-full px-3 sm:px-3.5 rounded-[6px] text-[14px] font-medium transition-colors cursor-pointer flex items-center gap-2 text-[var(--color-text)] hover:bg-[var(--color-hover-surface)]"
           data-sort="author"
           title="По автору: А–Я"
+          aria-label="Сортировка по автору"
           aria-pressed="false"
         >
           <User class="w-4 h-4 stroke-[2]" />
@@ -394,6 +397,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         searchClearBtn?.classList.add('hidden');
       }
       resetAllFilters();
+      searchInput?.focus();
     });
 
     // Sidebar tags binding

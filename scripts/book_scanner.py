@@ -43,7 +43,7 @@ def slugify(text: str) -> str:
             res.append(char)
         else:
             res.append(' ')
-    slug = re.sub(r'[\s_]+', '-', ''.join(res)).strip('-')
+    slug = re.sub(r'[-\s_]+', '-', ''.join(res)).strip('-')
     return slug[:60].rstrip('-') if slug else "book"
 
 def fetch_json(url: str):
@@ -58,11 +58,34 @@ def fetch_json(url: str):
         print(f"[!] Ошибка запроса к {url}: {e}", file=sys.stderr)
         return None
 
+def is_valid_image(data: bytes) -> bool:
+    if not data or len(data) == 0:
+        return False
+    stripped = data.lstrip()
+    if stripped.startswith(b'<') or stripped.lower().startswith(b'<!doctype'):
+        return False
+    if data.startswith(b'\xff\xd8\xff'):  # JPEG
+        return True
+    if data.startswith(b'\x89PNG\r\n\x1a\n'):  # PNG
+        return True
+    if data.startswith(b'RIFF') and b'WEBP' in data[:16]:  # WebP
+        return True
+    return False
+
+def clean_description(desc: str) -> str:
+    if not desc:
+        return ""
+    desc = re.sub(r'<(?:br\s*/?|/p|/div)>', '\n\n', desc, flags=re.IGNORECASE)
+    desc = html.unescape(re.sub(r'<[^>]+>', '', desc)).strip()
+    desc = re.sub(r'\n{3,}', '\n\n', desc)
+    return desc
+
 def download_image(url: str, dest_path: Path) -> bool:
     headers = {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
     req = urllib.request.Request(url, headers=headers)
+    tmp_path = dest_path.with_name(f"{dest_path.name}.tmp")
     try:
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         with urllib.request.urlopen(req, timeout=15) as resp:
@@ -70,18 +93,33 @@ def download_image(url: str, dest_path: Path) -> bool:
             if not data or len(data) == 0:
                 print(f"[!] Пустой ответ сервера при скачивании обложки {url}", file=sys.stderr)
                 return False
-            with open(dest_path, 'wb') as f:
+
+            stripped = data.lstrip()
+            if stripped.startswith(b'<') or stripped.lower().startswith(b'<!doctype'):
+                print(f"[!] Ответ сервера содержит HTML вместо изображения: {url}", file=sys.stderr)
+                return False
+
+            if not is_valid_image(data):
+                print(f"[!] Некорректный или неподдерживаемый формат изображения: {url}", file=sys.stderr)
+                return False
+
+            with open(tmp_path, 'wb') as f:
                 f.write(data)
-        if dest_path.exists() and dest_path.stat().st_size > 0:
+
+        if tmp_path.exists() and tmp_path.stat().st_size > 0:
+            tmp_path.replace(dest_path)
             return True
         else:
-            if dest_path.exists():
-                dest_path.unlink()
+            if tmp_path.exists():
+                try:
+                    tmp_path.unlink()
+                except Exception:
+                    pass
             return False
     except Exception as e:
-        if dest_path.exists():
+        if tmp_path.exists():
             try:
-                dest_path.unlink()
+                tmp_path.unlink()
             except Exception:
                 pass
         print(f"[!] Не удалось скачать обложку {url}: {e}", file=sys.stderr)
@@ -256,8 +294,8 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
 
     desc = (book_info.get('description') or '').strip()
     if desc:
-        desc = html.unescape(re.sub(r'<[^>]+>', '', desc)).strip()
-    else:
+        desc = clean_description(desc)
+    if not desc:
         desc = f"Экземпляр бумажной книги «{final_title}» ({final_author})."
 
     content = f"""---
@@ -274,7 +312,11 @@ author: {json.dumps(final_author, ensure_ascii=False)}
 
     with open(md_file, 'w', encoding='utf-8') as f:
         f.write(content)
-    print(f"[✓] Запись книги создана: {md_file.relative_to(ROOT_DIR)}")
+    try:
+        rel_md = md_file.relative_to(ROOT_DIR)
+    except ValueError:
+        rel_md = md_file
+    print(f"[✓] Запись книги создана: {rel_md}")
 
     # Move processed photo if given
     if photo_path:
@@ -301,7 +343,11 @@ author: {json.dumps(final_author, ensure_ascii=False)}
                         counter += 1
                     dest = PROCESSED_DIR / f"{stem}_{counter}{suffix}"
                 shutil.move(str(p), str(dest))
-                print(f"[✓] Исходное фото перемещено в {dest.relative_to(ROOT_DIR)}")
+                try:
+                    rel_dest = dest.relative_to(ROOT_DIR)
+                except ValueError:
+                    rel_dest = dest
+                print(f"[✓] Исходное фото перемещено в {rel_dest}")
         else:
             print(f"[!] Внимание: файл фотографии не найден: {photo_path}", file=sys.stderr)
 

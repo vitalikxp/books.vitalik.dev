@@ -104,32 +104,34 @@ if (data.status === 'reading') {
         </p>
 
         <!-- Metadata Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-line)] mb-8">
-          {data.year && (
-            <div>
-              <span class="block text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)] mb-1">Год</span>
-              <span class="text-[14px] font-medium text-[var(--color-text)]">{data.year}</span>
-            </div>
-          )}
-          {data.publisher && (
-            <div>
-              <span class="block text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)] mb-1">Издательство</span>
-              <span class="text-[14px] font-medium text-[var(--color-text)] truncate block">{data.publisher}</span>
-            </div>
-          )}
-          {data.pages && (
-            <div>
-              <span class="block text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)] mb-1">Страниц</span>
-              <span class="text-[14px] font-medium text-[var(--color-text)]">{data.pages}</span>
-            </div>
-          )}
-          {data.isbn && (
-            <div>
-              <span class="block text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)] mb-1">ISBN</span>
-              <span class="text-[13px] font-mono text-[var(--color-text)] truncate block">{data.isbn}</span>
-            </div>
-          )}
-        </div>
+        {(data.year || data.publisher || data.pages || data.isbn) && (
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-line)] mb-8">
+            {data.year && (
+              <div>
+                <span class="block text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)] mb-1">Год</span>
+                <span class="text-[14px] font-medium text-[var(--color-text)]">{data.year}</span>
+              </div>
+            )}
+            {data.publisher && (
+              <div>
+                <span class="block text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)] mb-1">Издательство</span>
+                <span class="text-[14px] font-medium text-[var(--color-text)] truncate block">{data.publisher}</span>
+              </div>
+            )}
+            {data.pages && (
+              <div>
+                <span class="block text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)] mb-1">Страниц</span>
+                <span class="text-[14px] font-medium text-[var(--color-text)]">{data.pages}</span>
+              </div>
+            )}
+            {data.isbn && (
+              <div>
+                <span class="block text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted)] mb-1">ISBN</span>
+                <span class="text-[13px] font-mono text-[var(--color-text)] truncate block">{data.isbn}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         <!-- Genres Tags -->
         {data.genres.length > 0 && (

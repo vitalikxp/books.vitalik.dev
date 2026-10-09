@@ -229,6 +229,19 @@ body {
   border-bottom-left-radius: inherit;
 }
 
+/* Sidebar active tag contrast & hover states */
+.nav-genre-btn[aria-current="page"] {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.nav-genre-btn[aria-current="page"]:hover {
+  background-color: var(--color-primary-hover);
+}
+.nav-genre-btn[aria-current="page"] .tag-icon-wrap,
+.nav-genre-btn[aria-current="page"] .genre-count {
+  color: var(--color-on-primary) !important;
+}
+
 /* Accessible focus ring */
 :focus-visible {
   outline: var(--focus-ring);

@@ -69,13 +69,13 @@ const isHome = Astro.url.pathname === '/';
               }`}
             >
               <div class="flex items-center gap-2.5 min-w-0">
-                <span class={`tag-icon-wrap shrink-0 ${isHome ? 'text-[var(--color-on-primary)]' : 'text-[var(--color-muted)] group-hover:text-[var(--color-text)] transition-colors'}`}>
+                <span class={`tag-icon-wrap shrink-0 ${isHome ? 'text-[var(--color-on-primary)]' : 'text-[var(--color-muted)]'} group-hover:text-[var(--color-text)] transition-colors`}>
                   <Library class="w-4 h-4 stroke-[1.8]" />
                 </span>
                 <span class="truncate">Все книги</span>
               </div>
               {totalBooks > 0 && (
-                <span class={`genre-count font-mono text-[13px] shrink-0 ml-2 ${isHome ? 'text-[var(--color-on-primary)]' : 'text-[var(--color-muted)] group-hover:text-[var(--color-text)]'}`}>
+                <span class={`genre-count font-mono text-[13px] shrink-0 ml-2 ${isHome ? 'text-[var(--color-on-primary)]' : 'text-[var(--color-muted)]'} group-hover:text-[var(--color-text)]`}>
                   {totalBooks}
                 </span>
               )}
