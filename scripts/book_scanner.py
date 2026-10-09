@@ -145,7 +145,7 @@ def search_google_books(query: str, isbn: str = None):
 
     # Extract ISBN
     found_isbn = ""
-    for id_info in info.get('industryIdentifiers', []):
+    for id_info in (info.get('industryIdentifiers') or []):
         if id_info.get('type') in ['ISBN_13', 'ISBN_10']:
             found_isbn = id_info.get('identifier', '')
             if id_info.get('type') == 'ISBN_13':
@@ -160,7 +160,7 @@ def search_google_books(query: str, isbn: str = None):
         # Attempt to upgrade zoom if possible
         cover_url = re.sub(r'&zoom=\d', '&zoom=2', cover_url)
 
-    published_date = info.get('publishedDate', '')
+    published_date = info.get('publishedDate') or ''
     year_match = re.search(r'\d{4}', published_date)
     year = int(year_match.group(0)) if year_match else None
 
@@ -214,7 +214,7 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
              status: str = "read", rating: int = None, photo_path: str = None,
              custom_cover: str = None, year: int = None, publisher: str = None,
              pages: int = None, genres: list = None, description: str = None):
-    search_q = query or f"{author} {title}".strip()
+    search_q = (query or "").strip() or f"{author} {title}".strip()
     book_info = None
 
     # If title and author are not fully given or search requested, try online APIs

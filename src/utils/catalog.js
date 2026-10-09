@@ -26,8 +26,8 @@ export function matchesSearch(book, searchQuery) {
   const author = normalize(book.author || '');
   const isbn = normalize(book.isbn || '');
 
-  const cleanIsbn = isbn.replace(/[-\s]/g, '');
-  const cleanQuery = normalizedQuery.replace(/[-\s]/g, '');
+  const cleanIsbn = isbn.replace(/^isbn[:\s]*/i, '').replace(/[-\s\u2010-\u2015]/g, '');
+  const cleanQuery = normalizedQuery.replace(/^isbn[:\s]*/i, '').replace(/[-\s\u2010-\u2015]/g, '');
   const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
 
   const matchesAllWords = queryWords.length > 0 && queryWords.every(
@@ -89,7 +89,11 @@ export function compareBooks(a, b, sortMode = 'recent') {
   }
 
   if (sortMode === 'author') {
-    const authorDiff = (a.author || '').localeCompare(b.author || '', 'ru');
+    const authorA = (a.author || '').trim();
+    const authorB = (b.author || '').trim();
+    if (!authorA && authorB) return 1;
+    if (authorA && !authorB) return -1;
+    const authorDiff = authorA.localeCompare(authorB, 'ru');
     if (authorDiff !== 0) return authorDiff;
     const titleDiff = (a.title || '').localeCompare(b.title || '', 'ru');
     if (titleDiff !== 0) return titleDiff;

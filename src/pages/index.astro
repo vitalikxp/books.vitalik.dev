@@ -210,7 +210,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
         let matchesSearch = true;
         if (searchQuery) {
-          const cleanQuery = searchQuery.replace(/[-\s]/g, '');
+          const cleanQuery = searchQuery.replace(/^isbn[:\s]*/i, '').replace(/[-\s\u2010-\u2015]/g, '');
           const queryWords = searchQuery.split(/\s+/).filter(Boolean);
           const matchesAllWords = queryWords.every((word) => title.includes(word) || author.includes(word));
           matchesSearch = matchesAllWords || (cleanQuery.length > 0 && isbn.includes(cleanQuery));
@@ -241,7 +241,11 @@ const sortedBooks = [...allBooks].sort((a, b) => {
             if (authorDiff !== 0) return authorDiff;
             return (a.dataset.id || '').localeCompare(b.dataset.id || '');
           } else if (currentSort === 'author') {
-            const authorDiff = (a.dataset.author || '').localeCompare(b.dataset.author || '', 'ru');
+            const authorA = (a.dataset.author || '').trim();
+            const authorB = (b.dataset.author || '').trim();
+            if (!authorA && authorB) return 1;
+            if (authorA && !authorB) return -1;
+            const authorDiff = authorA.localeCompare(authorB, 'ru');
             if (authorDiff !== 0) return authorDiff;
             const titleDiff = (a.dataset.title || '').localeCompare(b.dataset.title || '', 'ru');
             if (titleDiff !== 0) return titleDiff;
@@ -323,6 +327,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
     searchInput?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
+        if (e.isComposing) return;
         if (searchDebounceTimer) {
           clearTimeout(searchDebounceTimer);
           searchDebounceTimer = undefined;

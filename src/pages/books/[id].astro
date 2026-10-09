@@ -40,7 +40,7 @@ if (data.status === 'reading') {
     <div class="mb-8">
       <a 
         href="/" 
-        onclick="try { if (document.referrer && new URL(document.referrer).origin === window.location.origin) { window.history.back(); return false; } } catch {}"
+        onclick="try { if (document.referrer && new URL(document.referrer).origin === window.location.origin && window.history.length > 1) { window.history.back(); return false; } } catch {}"
         class="inline-flex items-center gap-2 text-[15px] font-medium text-[var(--color-muted)] hover:text-[var(--color-primary)] transition-colors group"
       >
         <ArrowLeft class="w-4 h-4 stroke-[2] transition-transform group-hover:-translate-x-1" />
@@ -99,7 +99,7 @@ if (data.status === 'reading') {
         )}
 
         <!-- Author in Inter -->
-        <p class="text-[20px] font-medium text-[var(--color-primary)] mb-8">
+        <p class="text-[20px] font-medium text-[var(--color-muted)] mb-8">
           {data.author}
         </p>
 

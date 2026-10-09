@@ -93,6 +93,17 @@ test('3. Поиск по ISBN (очистка дефисов и пробелов
     assert.equal(matchesSearch(book, '5041100575'), true);
   });
 
+  await t.test('находит книгу по запросу с типографскими тире (en-dash, em-dash)', () => {
+    assert.equal(matchesSearch(book, '978–5–04–110057–5'), true);
+    assert.equal(matchesSearch(book, '978—5—04—110057—5'), true);
+  });
+
+  await t.test('находит книгу по запросу с префиксом ISBN', () => {
+    assert.equal(matchesSearch(book, 'ISBN 978-5-04-110057-5'), true);
+    assert.equal(matchesSearch(book, 'isbn: 978-5-04-110057-5'), true);
+    assert.equal(matchesSearch(book, 'ISBN: 978–5–04–110057–5'), true);
+  });
+
   await t.test('возвращает false при несовпадающем ISBN', () => {
     assert.equal(matchesSearch(book, '9781234567890'), false);
   });
@@ -162,10 +173,22 @@ test('5. Компараторы сортировки (compareBooks)', async (t) 
   ];
 
   await t.test('сортировка «recent» (по дате добавления desc, tie-break по году desc, затем по названию)', () => {
-    const sorted = [...books].sort((a, b) => compareBooks(a, b, 'recent'));
+    const fixtureBooks = [
+      ...books,
+      {
+        id: 'book-5',
+        title: 'Абстракция данных',
+        author: 'Кори Альтхофф',
+        added: 1700000000,
+        year: 2021,
+      },
+    ];
+    const sorted = [...fixtureBooks].sort((a, b) => compareBooks(a, b, 'recent'));
     // book-2 (added: 1720000000) -> book-1 (added: 1710000000) ->
-    // book-4 (added: 1700000000, year 2022) -> book-3 (added: 1700000000, year 2021)
-    assert.deepEqual(sorted.map((b) => b.id), ['book-2', 'book-1', 'book-4', 'book-3']);
+    // book-4 (added: 1700000000, year 2022) ->
+    // book-5 (added: 1700000000, year 2021, 'Абстракция...') ->
+    // book-3 (added: 1700000000, year 2021, 'Computer Science...')
+    assert.deepEqual(sorted.map((b) => b.id), ['book-2', 'book-1', 'book-4', 'book-5', 'book-3']);
   });
 
   await t.test('сортировка «title» (по названию А-Я)', () => {
@@ -184,5 +207,27 @@ test('5. Компараторы сортировки (compareBooks)', async (t) 
     // 'Сам себе программист' (кириллица С) идет перед 'Computer Science...' (латиница C)
     assert.equal(sorted[1].id, 'book-4');
     assert.equal(sorted[2].id, 'book-3');
+  });
+
+  await t.test('сортировка «author» размещает книги без автора в конце', () => {
+    const booksWithAuthorless = [
+      { id: 'no-author-1', title: 'Языки программирования', author: '' },
+      { id: 'with-author-1', title: 'Алиса в Стране чудес', author: 'Льюис Кэрролл' },
+      { id: 'no-author-2', title: 'Алгоритмы', author: '   ' },
+      { id: 'with-author-2', title: 'Война и мир', author: 'Лев Толстой' },
+      { id: 'no-author-3', title: 'Библия', author: undefined },
+    ];
+    const sorted = [...booksWithAuthorless].sort((a, b) => compareBooks(a, b, 'author'));
+    // Книги с автором:
+    // 'Лев Толстой' ('with-author-2') -> 'Льюис Кэрролл' ('with-author-1')
+    // Книги без автора (отсортированы по названию А-Я):
+    // 'Алгоритмы' ('no-author-2') -> 'Библия' ('no-author-3') -> 'Языки программирования' ('no-author-1')
+    assert.deepEqual(sorted.map((b) => b.id), [
+      'with-author-2',
+      'with-author-1',
+      'no-author-2',
+      'no-author-3',
+      'no-author-1',
+    ]);
   });
 });
