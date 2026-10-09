@@ -88,7 +88,8 @@ def download_image(url: str, dest_path: Path) -> bool:
         return False
 
 def search_google_books(query: str, isbn: str = None):
-    q = f"isbn:{isbn}" if isbn else query
+    clean_isbn = (isbn or '').replace('-', '').replace(' ', '')
+    q = f"isbn:{clean_isbn}" if clean_isbn else query
     encoded_q = urllib.parse.quote(q)
     url = f"https://www.googleapis.com/books/v1/volumes?q={encoded_q}&maxResults=3&langRestrict=ru"
     data = fetch_json(url)
@@ -142,7 +143,8 @@ def search_google_books(query: str, isbn: str = None):
     }
 
 def search_open_library(query: str, isbn: str = None):
-    q = isbn if isbn else query
+    clean_isbn = (isbn or '').replace('-', '').replace(' ', '')
+    q = clean_isbn if clean_isbn else query
     encoded_q = urllib.parse.quote(q)
     url = f"https://openlibrary.org/search.json?q={encoded_q}&limit=3"
     data = fetch_json(url)
@@ -154,6 +156,9 @@ def search_open_library(query: str, isbn: str = None):
     cover_i = doc.get('cover_i')
     cover_url = f"https://covers.openlibrary.org/b/id/{cover_i}-L.jpg" if cover_i else None
 
+    raw_lang = (doc.get('language') or ['ru'])[0] if doc.get('language') else 'ru'
+    lang = 'ru' if raw_lang in ['rus', 'ru'] else raw_lang
+
     return {
         'title': doc.get('title', ''),
         'author': ", ".join(doc.get('author_name') or []) or "Неизвестный автор",
@@ -162,7 +167,7 @@ def search_open_library(query: str, isbn: str = None):
         'isbn': (doc.get('isbn') or [''])[0] if doc.get('isbn') else '',
         'pages': doc.get('number_of_pages_median'),
         'genres': (doc.get('subject') or [])[:5],
-        'language': (doc.get('language') or ['ru'])[0] if doc.get('language') else 'ru',
+        'language': lang,
         'description': '',
         'cover_url': cover_url,
     }
@@ -174,8 +179,9 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
     search_q = query or f"{author} {title}".strip()
     book_info = None
 
-    # If title and author are not given or search requested, try online APIs
-    if not (title and author):
+    # If title and author are not fully given or search requested, try online APIs
+    should_search = bool(query or isbn or not (title and author and custom_cover and year))
+    if should_search:
         if not search_q and not isbn:
             print("[!] Укажите название, автора или ISBN для поиска.")
             return False
@@ -230,10 +236,13 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
 
     cover_to_download = book_info.get('cover_url')
     if cover_to_download:
-        print(f"[*] Скачивание обложки: {cover_to_download}...")
-        if download_image(cover_to_download, cover_target):
-            cover_rel_path = f"/covers/{slug}.jpg"
-            print(f"[✓] Обложка сохранена в {cover_rel_path}")
+        if cover_to_download.startswith('/covers/') or cover_to_download.startswith('covers/'):
+            cover_rel_path = cover_to_download if cover_to_download.startswith('/') else f"/{cover_to_download}"
+        else:
+            print(f"[*] Скачивание обложки: {cover_to_download}...")
+            if download_image(cover_to_download, cover_target):
+                cover_rel_path = f"/covers/{slug}.jpg"
+                print(f"[✓] Обложка сохранена в {cover_rel_path}")
 
     # Generate Markdown file
     md_file = BOOKS_DIR / f"{slug}.md"
@@ -270,6 +279,14 @@ author: {json.dumps(final_author, ensure_ascii=False)}
     # Move processed photo if given
     if photo_path:
         p = Path(photo_path)
+        if not p.is_absolute() and not p.exists():
+            if (ROOT_DIR / photo_path).exists():
+                p = ROOT_DIR / photo_path
+            elif (INCOMING_DIR / photo_path).exists():
+                p = INCOMING_DIR / photo_path
+            elif (INCOMING_DIR / p.name).exists():
+                p = INCOMING_DIR / p.name
+
         if p.exists():
             PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
             if p.resolve().parent == PROCESSED_DIR.resolve():
@@ -285,6 +302,8 @@ author: {json.dumps(final_author, ensure_ascii=False)}
                     dest = PROCESSED_DIR / f"{stem}_{counter}{suffix}"
                 shutil.move(str(p), str(dest))
                 print(f"[✓] Исходное фото перемещено в {dest.relative_to(ROOT_DIR)}")
+        else:
+            print(f"[!] Внимание: файл фотографии не найден: {photo_path}", file=sys.stderr)
 
     return True
 

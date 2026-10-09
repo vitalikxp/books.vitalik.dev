@@ -17,18 +17,23 @@ const {
 const allBooks = await getCollection('books');
 const totalBooks = allBooks.length;
 
-// Extract genres with counts, sorted by count descending then alphabetically
-const genreCounts = new Map<string, number>();
+// Extract genres with counts, normalized by lower-case key to avoid duplicates, sorted by count descending then alphabetically
+const genreMap = new Map<string, { name: string; count: number }>();
 allBooks.forEach((b) => {
   b.data.genres.forEach((g) => {
     const trimmed = (g || '').trim();
     if (trimmed) {
-      genreCounts.set(trimmed, (genreCounts.get(trimmed) || 0) + 1);
+      const key = trimmed.toLowerCase();
+      const existing = genreMap.get(key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        genreMap.set(key, { name: trimmed, count: 1 });
+      }
     }
   });
 });
-const genres = Array.from(genreCounts.entries())
-  .map(([name, count]) => ({ name, count }))
+const genres = Array.from(genreMap.values())
   .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ru'));
 ---
 

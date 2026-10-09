@@ -399,7 +399,19 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     // Sidebar tags binding
     navGenreBtns.forEach((btn) => {
       btn.addEventListener('click', (e) => {
-        // Prevent page navigation since we're already on index page
+        const mouseEvent = e as MouseEvent;
+        if (
+          mouseEvent.defaultPrevented ||
+          mouseEvent.button !== 0 ||
+          mouseEvent.metaKey ||
+          mouseEvent.ctrlKey ||
+          mouseEvent.shiftKey ||
+          mouseEvent.altKey
+        ) {
+          return;
+        }
+
+        // Prevent page reload since we're already on index page
         e.preventDefault();
 
         const genre = normalize((btn as HTMLElement).dataset.navGenre || '');
