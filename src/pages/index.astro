@@ -238,6 +238,14 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     let selectedGenre = initialGenre ? normalize(initialGenre) : '';
     let currentSort = 'recent'; // recent, title, author
 
+    function flushPendingSearch() {
+      if (searchDebounceTimer) {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = undefined;
+      }
+      searchQuery = normalize(searchInput?.value || '');
+    }
+
     function getGenreDisplayName(genreSlug: string): string {
       if (!genreSlug) return '';
       for (const btn of Array.from(navGenreBtns)) {
@@ -396,11 +404,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     searchInput?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         if (e.isComposing) return;
-        if (searchDebounceTimer) {
-          clearTimeout(searchDebounceTimer);
-          searchDebounceTimer = undefined;
-        }
-        searchQuery = normalize((searchInput as HTMLInputElement).value);
+        flushPendingSearch();
         applyFilterAndSort();
       }
     });
@@ -533,10 +537,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
     // Mobile reset genre button (resets only genre, preserving search and sort, Fix 7)
     mobileResetGenreBtn?.addEventListener('click', () => {
-      if (searchDebounceTimer) {
-        clearTimeout(searchDebounceTimer);
-        searchDebounceTimer = undefined;
-      }
+      flushPendingSearch();
       selectedGenre = '';
       syncUrlGenre();
       applyFilterAndSort();
@@ -560,10 +561,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         // Prevent page reload since we're already on index page
         e.preventDefault();
 
-        if (searchDebounceTimer) {
-          clearTimeout(searchDebounceTimer);
-          searchDebounceTimer = undefined;
-        }
+        flushPendingSearch();
 
         const genre = normalize((btn as HTMLElement).dataset.navGenre || '');
         if (selectedGenre === genre && genre !== '') {
@@ -589,10 +587,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
     // Listen to browser back/forward buttons
     function onPopState() {
-      if (searchDebounceTimer) {
-        clearTimeout(searchDebounceTimer);
-        searchDebounceTimer = undefined;
-      }
+      flushPendingSearch();
       const paramGenre = new URLSearchParams(window.location.search).get('genre');
       selectedGenre = paramGenre ? normalize(paramGenre) : '';
       applyFilterAndSort();

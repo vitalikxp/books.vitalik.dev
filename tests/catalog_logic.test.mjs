@@ -140,6 +140,19 @@ test('3. Поиск по ISBN (очистка дефисов и пробелов
   await t.test('возвращает false при несовпадающем ISBN', () => {
     assert.equal(matchesSearch(book, '9781234567890'), false);
   });
+
+  await t.test('поиск по одиночной цифре (1-3 цифры) не матчит ISBN без префикса isbn', () => {
+    // В названии и авторе нет '9', но есть в ISBN '978-5-04-110057-5'
+    assert.equal(matchesSearch(book, '9'), false);
+    assert.equal(matchesSearch(book, '97'), false);
+    assert.equal(matchesSearch(book, '978'), false);
+  });
+
+  await t.test('поиск по 4+ цифрам из ISBN или с префиксом isbn успешно находит книгу по ISBN', () => {
+    assert.equal(matchesSearch(book, '9785'), true);
+    assert.equal(matchesSearch(book, '5041100575'), true);
+    assert.equal(matchesSearch(book, 'isbn: 9'), true);
+  });
 });
 
 test('4. Фильтрация по ярлыкам (matchesGenre)', async (t) => {
@@ -205,6 +218,24 @@ test('4. Фильтрация по ярлыкам (matchesGenre)', async (t) => 
     assert.equal(matchesGenre(bookJsonGenres, 'Наука, образование'), true);
     assert.equal(matchesGenre(bookJsonGenres, 'ИТ'), true);
     assert.equal(matchesGenre(bookJsonGenres, 'Наука'), false);
+  });
+
+  await t.test('поддерживает bracketed строки без валидного JSON', () => {
+    const bookBracketPlain = {
+      title: 'Книга 1',
+      genres: '[дизайн, типографика]',
+    };
+    assert.equal(matchesGenre(bookBracketPlain, 'дизайн'), true);
+    assert.equal(matchesGenre(bookBracketPlain, 'типографика'), true);
+    assert.equal(matchesGenre(bookBracketPlain, 'программирование'), false);
+
+    const bookBracketSingleQuotes = {
+      title: 'Книга 2',
+      genres: "['дизайн', 'типографика']",
+    };
+    assert.equal(matchesGenre(bookBracketSingleQuotes, 'дизайн'), true);
+    assert.equal(matchesGenre(bookBracketSingleQuotes, 'типографика'), true);
+    assert.equal(matchesGenre(bookBracketSingleQuotes, 'программирование'), false);
   });
 });
 
@@ -372,6 +403,28 @@ test('5. Компараторы сортировки (compareBooks)', async (t) 
       'b-nan-year',
     ]);
   });
+
+  await t.test('compareBooks корректно работает и не падает с TypeError с числовыми id ({ id: 101 }), title ({ title: 1984 }) и author', () => {
+    const numBooks = [
+      { id: 102, title: 1984, author: 'Джордж Оруэлл' },
+      { id: 101, title: 'Аэлита', author: 0 },
+    ];
+    assert.doesNotThrow(() => [...numBooks].sort((a, b) => compareBooks(a, b, 'title')));
+    assert.doesNotThrow(() => [...numBooks].sort((a, b) => compareBooks(a, b, 'author')));
+    assert.doesNotThrow(() => [...numBooks].sort((a, b) => compareBooks(a, b, 'recent')));
+
+    const sortedTitle = [...numBooks].sort((a, b) => compareBooks(a, b, 'title'));
+    assert.equal(sortedTitle[0].id, 102); // '1984' идет перед 'Аэлита'
+    assert.equal(sortedTitle[1].id, 101);
+
+    const sameBooksNumericId = [
+      { id: 102, title: 'Книга', author: 'Автор' },
+      { id: 101, title: 'Книга', author: 'Автор' },
+    ];
+    const sortedById = [...sameBooksNumericId].sort((a, b) => compareBooks(a, b, 'title'));
+    assert.equal(sortedById[0].id, 101);
+    assert.equal(sortedById[1].id, 102);
+  });
 });
 
 test('6. Защитная обработка null / undefined объектов книг', async (t) => {
@@ -387,6 +440,8 @@ test('6. Защитная обработка null / undefined объектов �
     assert.equal(matchesGenre(undefined, 'дизайн'), false);
     assert.equal(matchesGenre(null, ''), true);
     assert.equal(matchesGenre(undefined, ''), true);
+    assert.equal(matchesGenre(null, '   '), true);
+    assert.equal(matchesGenre(undefined, '   '), true);
   });
 
   await t.test('matchesFilter возвращает false для null и undefined', () => {

@@ -71,6 +71,23 @@ class TestSlugify(unittest.TestCase):
     def test_slugify_none_input(self):
         self.assertEqual(slugify(None), "book")
 
+    def test_ukrainian_letters_transliteration(self):
+        slug = slugify("Сергій Жадан")
+        self.assertEqual(slug, "sergiy-zhadan")
+        self.assertTrue(slug.isascii())
+        self.assertNotIn("і", slug)
+
+    def test_diacritics_transliteration(self):
+        slug = slugify("René Descartes")
+        self.assertEqual(slug, "rene-descartes")
+        self.assertTrue(slug.isascii())
+
+    def test_belarusian_and_ukrainian_extended_characters(self):
+        # 'і': 'i', 'ї': 'yi', 'є': 'ye', 'ґ': 'g', 'ў': 'u'
+        slug = slugify("Їжак Євген Ґрунт Ўладзімір Сергій")
+        self.assertEqual(slug, "yizhak-yevgen-grunt-uladzimir-sergiy")
+        self.assertTrue(slug.isascii())
+
 
 class TestCleanDescription(unittest.TestCase):
     """Tests for clean_description function."""
@@ -109,6 +126,19 @@ class TestCleanDescription(unittest.TestCase):
         self.assertEqual(clean_description(None), "")
         self.assertEqual(clean_description("<p></p>"), "")
         self.assertEqual(clean_description("<br><br/>"), "")
+
+    def test_block_html_tags_separation(self):
+        # Lists
+        raw_list = "<ul><li>Пункт 1</li><li>Пункт 2</li></ul>"
+        self.assertEqual(clean_description(raw_list), "Пункт 1\n\nПункт 2")
+
+        # Headings and paragraphs
+        raw_heading = "<h1>Заголовок</h1><p>Текст</p>"
+        self.assertEqual(clean_description(raw_heading), "Заголовок\n\nТекст")
+
+        # Blockquotes, tables, definition lists
+        raw_blocks = "<blockquote>Цитата</blockquote><table><tr><td>Ячейка 1</td><td>Ячейка 2</td></tr></table><dl><dt>Термин</dt><dd>Определение</dd></dl>"
+        self.assertEqual(clean_description(raw_blocks), "Цитата\n\nЯчейка 1\n\nЯчейка 2\n\nТермин\n\nОпределение")
 
 
 class TestImageValidation(unittest.TestCase):
@@ -369,6 +399,29 @@ class TestSearchGoogleBooks(unittest.TestCase):
         self.assertEqual(result["isbn"], "")
         self.assertIsNone(result["cover_url"])
         self.assertEqual(result["genres"], [])
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_google_books_none_volume_info_payload(self, mock_fetch_json):
+        """Verify no AttributeError is raised when item['volumeInfo'] is None."""
+        mock_fetch_json.return_value = {
+            "items": [
+                {
+                    "volumeInfo": None
+                }
+            ]
+        }
+        result = search_google_books("Книга с None volumeInfo")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["title"], "")
+        self.assertEqual(result["author"], "Неизвестный автор")
+        self.assertIsNone(result["year"])
+        self.assertEqual(result["publisher"], "")
+        self.assertEqual(result["isbn"], "")
+        self.assertIsNone(result["pages"])
+        self.assertEqual(result["genres"], [])
+        self.assertEqual(result["language"], "ru")
+        self.assertEqual(result["description"], "")
+        self.assertIsNone(result["cover_url"])
 
     @patch("scripts.book_scanner.fetch_json")
     def test_search_google_books_empty_results(self, mock_fetch_json):

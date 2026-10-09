@@ -12,6 +12,7 @@ import os
 import re
 import shutil
 import sys
+import unicodedata
 import urllib.parse
 import urllib.request
 from datetime import date
@@ -30,7 +31,8 @@ TRANSLIT_DICT = {
     'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
     'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
     'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
-    'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya'
+    'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
+    'і': 'i', 'ї': 'yi', 'є': 'ye', 'ґ': 'g', 'ў': 'u'
 }
 
 def slugify(text: str) -> str:
@@ -39,7 +41,15 @@ def slugify(text: str) -> str:
     for char in text:
         if char in TRANSLIT_DICT:
             res.append(TRANSLIT_DICT[char])
-        elif char.isalnum() or char in ['-', ' ']:
+        else:
+            res.append(char)
+    text = ''.join(res)
+    text = unicodedata.normalize('NFKD', text)
+    text = ''.join(c for c in text if not unicodedata.combining(c))
+
+    res = []
+    for char in text:
+        if ('a' <= char <= 'z') or ('0' <= char <= '9') or char in ['-', ' ']:
             res.append(char)
         else:
             res.append(' ')
@@ -76,7 +86,7 @@ def is_valid_image(data: bytes) -> bool:
 def clean_description(desc: str) -> str:
     if not desc:
         return ""
-    desc = re.sub(r'<(?:br\s*/?|/p|/div)>', '\n\n', desc, flags=re.IGNORECASE)
+    desc = re.sub(r'<(?:br\s*/?|/p|/div|/li|/h[1-6]|/blockquote|/tr|/td|/dd|/dt)>', '\n\n', desc, flags=re.IGNORECASE)
     desc = html.unescape(re.sub(r'<[^>]+>', '', desc)).strip()
     desc = re.sub(r'\n{3,}', '\n\n', desc)
     return desc
@@ -142,7 +152,7 @@ def search_google_books(query: str, isbn: str = None):
         return None
 
     item = data['items'][0]
-    info = item.get('volumeInfo', {})
+    info = item.get('volumeInfo') or {}
 
     # Extract ISBN
     found_isbn = ""

@@ -35,7 +35,10 @@ export function matchesSearch(book, searchQuery) {
     (word) => title.includes(word) || author.includes(word)
   );
 
-  return matchesAllWords || (cleanQuery.length > 0 && cleanIsbn.includes(cleanQuery));
+  const hasIsbnPrefix = /^isbn/i.test(normalizedQuery);
+  const matchesIsbn = (hasIsbnPrefix || cleanQuery.length >= 4) && cleanQuery.length > 0 && cleanIsbn.includes(cleanQuery);
+
+  return matchesAllWords || matchesIsbn;
 }
 
 /**
@@ -46,10 +49,9 @@ export function matchesSearch(book, searchQuery) {
  * @returns {boolean}
  */
 export function matchesGenre(book, selectedGenre) {
-  if (!book) return !selectedGenre;
-  if (!selectedGenre) return true;
   const normalizedGenre = normalize(selectedGenre);
   if (!normalizedGenre) return true;
+  if (!book) return false;
 
   let itemGenres = [];
   if (Array.isArray(book.genres)) {
@@ -60,7 +62,11 @@ export function matchesGenre(book, selectedGenre) {
       try {
         itemGenres = JSON.parse(trimmed).map((g) => normalize(g));
       } catch {
-        itemGenres = normalize(trimmed).split(',').map((g) => g.trim());
+        itemGenres = trimmed
+          .slice(1, -1)
+          .split(',')
+          .map((g) => normalize(g.trim().replace(/^['"]+|['"]+$/g, '')))
+          .filter(Boolean);
       }
     } else {
       itemGenres = normalize(trimmed).split(',').map((g) => g.trim());
@@ -103,24 +109,29 @@ export function compareBooks(a, b, sortMode = 'recent') {
   a = a || {};
   b = b || {};
 
+  const titleA = String(a.title ?? '');
+  const titleB = String(b.title ?? '');
+  const authorA = String(a.author ?? '').trim();
+  const authorB = String(b.author ?? '').trim();
+  const idA = String(a.id ?? '');
+  const idB = String(b.id ?? '');
+
   if (sortMode === 'title') {
-    const titleDiff = (a.title || '').localeCompare(b.title || '', 'ru', { sensitivity: 'accent' });
+    const titleDiff = titleA.localeCompare(titleB, 'ru', { sensitivity: 'accent' });
     if (titleDiff !== 0) return titleDiff;
-    const authorDiff = (a.author || '').localeCompare(b.author || '', 'ru', { sensitivity: 'accent' });
+    const authorDiff = authorA.localeCompare(authorB, 'ru', { sensitivity: 'accent' });
     if (authorDiff !== 0) return authorDiff;
-    return (a.id || '').localeCompare(b.id || '');
+    return idA.localeCompare(idB);
   }
 
   if (sortMode === 'author') {
-    const authorA = (a.author || '').trim();
-    const authorB = (b.author || '').trim();
     if (!authorA && authorB) return 1;
     if (authorA && !authorB) return -1;
     const authorDiff = authorA.localeCompare(authorB, 'ru', { sensitivity: 'accent' });
     if (authorDiff !== 0) return authorDiff;
-    const titleDiff = (a.title || '').localeCompare(b.title || '', 'ru', { sensitivity: 'accent' });
+    const titleDiff = titleA.localeCompare(titleB, 'ru', { sensitivity: 'accent' });
     if (titleDiff !== 0) return titleDiff;
-    return (a.id || '').localeCompare(b.id || '');
+    return idA.localeCompare(idB);
   }
 
   // "recent" mode: sort by date added descending (DESIGN.md 8.2), tie-breakers: year desc, title asc, id asc
@@ -134,7 +145,7 @@ export function compareBooks(a, b, sortMode = 'recent') {
   const yearB = Number.isFinite(parsedYearB) ? parsedYearB : 0;
   if (yearB !== yearA) return yearB - yearA;
 
-  const titleDiff = (a.title || '').localeCompare(b.title || '', 'ru', { sensitivity: 'accent' });
+  const titleDiff = titleA.localeCompare(titleB, 'ru', { sensitivity: 'accent' });
   if (titleDiff !== 0) return titleDiff;
-  return (a.id || '').localeCompare(b.id || '');
+  return idA.localeCompare(idB);
 }
