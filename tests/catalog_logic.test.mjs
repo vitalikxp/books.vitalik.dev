@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   normalize,
+  cleanIsbn,
   matchesSearch,
   matchesGenre,
   matchesFilter,
@@ -137,6 +138,31 @@ test('3. Поиск по ISBN (очистка дефисов и пробелов
     assert.equal(matchesSearch(book10, 'isbn10 5041100575'), true);
   });
 
+  await t.test('находит книгу, если ISBN в объекте книги содержит префиксы (ISBN, ISBN-13, ISBN-10)', () => {
+    const bookWithPrefix13 = {
+      title: 'Computer Science для программиста-самоучки',
+      author: 'Кори Альтхофф',
+      isbn: 'ISBN-13: 978-5-04-110057-5',
+    };
+    const bookWithPrefixPlain = {
+      ...bookWithPrefix13,
+      isbn: 'ISBN: 978-5-04-110057-5',
+    };
+    const bookWithPrefix10 = {
+      ...bookWithPrefix13,
+      isbn: 'ISBN-10: 5-04-110057-5',
+    };
+
+    assert.equal(matchesSearch(bookWithPrefix13, '9785041100575'), true);
+    assert.equal(matchesSearch(bookWithPrefix13, '978-5-04-110057-5'), true);
+
+    assert.equal(matchesSearch(bookWithPrefixPlain, '9785041100575'), true);
+    assert.equal(matchesSearch(bookWithPrefixPlain, '978-5-04-110057-5'), true);
+
+    assert.equal(matchesSearch(bookWithPrefix10, '5041100575'), true);
+    assert.equal(matchesSearch(bookWithPrefix10, '5-04-110057-5'), true);
+  });
+
   await t.test('возвращает false при несовпадающем ISBN', () => {
     assert.equal(matchesSearch(book, '9781234567890'), false);
   });
@@ -152,6 +178,18 @@ test('3. Поиск по ISBN (очистка дефисов и пробелов
     assert.equal(matchesSearch(book, '9785'), true);
     assert.equal(matchesSearch(book, '5041100575'), true);
     assert.equal(matchesSearch(book, 'isbn: 9'), true);
+  });
+
+  await t.test('cleanIsbn очищает префиксы ISBN, ISBN-10, ISBN-13, пробелы и все виды дефисов', () => {
+    assert.equal(cleanIsbn('978-5-04-110057-5'), '9785041100575');
+    assert.equal(cleanIsbn('ISBN-13: 978-5-04-110057-5'), '9785041100575');
+    assert.equal(cleanIsbn('isbn13: 978 5 04 110057 5'), '9785041100575');
+    assert.equal(cleanIsbn('ISBN-10: 5-04-110057-5'), '5041100575');
+    assert.equal(cleanIsbn('ISBN 978–5–04–110057–5'), '9785041100575');
+    assert.equal(cleanIsbn('978−5−04−110057−5'), '9785041100575');
+    assert.equal(cleanIsbn(''), '');
+    assert.equal(cleanIsbn(null), '');
+    assert.equal(cleanIsbn(undefined), '');
   });
 });
 
@@ -236,6 +274,21 @@ test('4. Фильтрация по ярлыкам (matchesGenre)', async (t) => 
     assert.equal(matchesGenre(bookBracketSingleQuotes, 'дизайн'), true);
     assert.equal(matchesGenre(bookBracketSingleQuotes, 'типографика'), true);
     assert.equal(matchesGenre(bookBracketSingleQuotes, 'программирование'), false);
+  });
+
+  await t.test('обрабатывает книги с отсутствующим или пустым полем genres (undefined, null или опущено)', () => {
+    const bookNoGenres = { title: 'Книга без поля genres' };
+    const bookNullGenres = { title: 'Книга с null genres', genres: null };
+    const bookUndefGenres = { title: 'Книга с undefined genres', genres: undefined };
+
+    assert.equal(matchesGenre(bookNoGenres, 'дизайн'), false);
+    assert.equal(matchesGenre(bookNoGenres, ''), true);
+
+    assert.equal(matchesGenre(bookNullGenres, 'дизайн'), false);
+    assert.equal(matchesGenre(bookNullGenres, ''), true);
+
+    assert.equal(matchesGenre(bookUndefGenres, 'дизайн'), false);
+    assert.equal(matchesGenre(bookUndefGenres, ''), true);
   });
 });
 
@@ -424,6 +477,37 @@ test('5. Компараторы сортировки (compareBooks)', async (t) 
     const sortedById = [...sameBooksNumericId].sort((a, b) => compareBooks(a, b, 'title'));
     assert.equal(sortedById[0].id, 101);
     assert.equal(sortedById[1].id, 102);
+  });
+
+  await t.test('compareBooks без третьего аргумента по умолчанию использует режим «recent»', () => {
+    const bookNewer = { id: 'b-new', title: 'Новая', added: 2000, year: 2023 };
+    const bookOlder = { id: 'b-old', title: 'Старая', added: 1000, year: 2020 };
+    const bookSameDateNewerYear = { id: 'b-year-new', title: 'А', added: 1000, year: 2022 };
+    const bookSameDateOlderYear = { id: 'b-year-old', title: 'Б', added: 1000, year: 2019 };
+
+    assert.equal(compareBooks(bookNewer, bookOlder), compareBooks(bookNewer, bookOlder, 'recent'));
+    assert.ok(compareBooks(bookNewer, bookOlder) < 0);
+    assert.ok(compareBooks(bookOlder, bookNewer) > 0);
+
+    // При одинаковом added проверяет сортировку по убыванию года (year desc)
+    assert.equal(
+      compareBooks(bookSameDateNewerYear, bookSameDateOlderYear),
+      compareBooks(bookSameDateNewerYear, bookSameDateOlderYear, 'recent')
+    );
+    assert.ok(compareBooks(bookSameDateNewerYear, bookSameDateOlderYear) < 0);
+    assert.ok(compareBooks(bookSameDateOlderYear, bookSameDateNewerYear) > 0);
+  });
+
+  await t.test('тай-брейк по id в режиме «author» для книг без автора и с одинаковыми названиями', () => {
+    const bookZ = { id: 'id-z', title: 'Одинаковое название', author: '' };
+    const bookA = { id: 'id-a', title: 'Одинаковое название', author: '' };
+    const sorted = [bookZ, bookA].sort((a, b) => compareBooks(a, b, 'author'));
+    assert.deepEqual(sorted.map((b) => b.id), ['id-a', 'id-z']);
+
+    const bookUndefZ = { id: 'id-z', title: 'То же название', author: undefined };
+    const bookUndefA = { id: 'id-a', title: 'То же название', author: undefined };
+    const sortedUndef = [bookUndefZ, bookUndefA].sort((a, b) => compareBooks(a, b, 'author'));
+    assert.deepEqual(sortedUndef.map((b) => b.id), ['id-a', 'id-z']);
   });
 });
 

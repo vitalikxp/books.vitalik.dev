@@ -10,6 +10,18 @@ export function normalize(text) {
 }
 
 /**
+ * Normalizes and strips prefixes/hyphens/dashes from an ISBN string.
+ *
+ * @param {string} [isbn]
+ * @returns {string}
+ */
+export function cleanIsbn(isbn) {
+  return normalize(isbn)
+    .replace(/^isbn(?:-?1[03])?[:\s]*/i, '')
+    .replace(/[-\s\u2010-\u2015\u2212]/g, '');
+}
+
+/**
  * Checks if a book matches search criteria.
  * Search supports multi-word queries across title and author, or ISBN match.
  *
@@ -25,10 +37,8 @@ export function matchesSearch(book, searchQuery) {
 
   const title = normalize(book.title || '');
   const author = normalize(book.author || '');
-  const isbn = normalize(book.isbn || '');
-
-  const cleanIsbn = isbn.replace(/^isbn(?:-?1[03])?[:\s]*/i, '').replace(/[-\s\u2010-\u2015\u2212]/g, '');
-  const cleanQuery = normalizedQuery.replace(/^isbn(?:-?1[03])?[:\s]*/i, '').replace(/[-\s\u2010-\u2015\u2212]/g, '');
+  const cleanIsbnValue = cleanIsbn(book.isbn);
+  const cleanQuery = cleanIsbn(normalizedQuery);
   const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
 
   const matchesAllWords = queryWords.length > 0 && queryWords.every(
@@ -36,7 +46,7 @@ export function matchesSearch(book, searchQuery) {
   );
 
   const hasIsbnPrefix = /^isbn/i.test(normalizedQuery);
-  const matchesIsbn = (hasIsbnPrefix || cleanQuery.length >= 4) && cleanQuery.length > 0 && cleanIsbn.includes(cleanQuery);
+  const matchesIsbn = (hasIsbnPrefix || cleanQuery.length >= 4) && cleanQuery.length > 0 && cleanIsbnValue.includes(cleanQuery);
 
   return matchesAllWords || matchesIsbn;
 }

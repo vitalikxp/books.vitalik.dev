@@ -461,6 +461,39 @@ class TestSearchGoogleBooks(unittest.TestCase):
             "https://www.googleapis.com/books/v1/volumes?q=isbn%3A5041100575&maxResults=3&langRestrict=ru"
         )
 
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_google_books_language_fallback(self, mock_fetch_json):
+        valid_item_payload = {
+            "items": [
+                {
+                    "volumeInfo": {
+                        "title": "Designing Data-Intensive Applications",
+                        "authors": ["Martin Kleppmann"],
+                        "publishedDate": "2017-03-16",
+                        "publisher": "O'Reilly Media",
+                        "industryIdentifiers": [
+                            {"type": "ISBN_13", "identifier": "9781449373320"}
+                        ],
+                        "pageCount": 616,
+                        "categories": ["Computers"],
+                        "language": "en",
+                        "description": "The big ideas behind reliable systems.",
+                    }
+                }
+            ]
+        }
+        # First call with langRestrict=ru returns empty items, second call returns valid payload
+        mock_fetch_json.side_effect = [{"items": []}, valid_item_payload]
+
+        result = search_google_books("Designing Data-Intensive Applications")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["title"], "Designing Data-Intensive Applications")
+        self.assertEqual(result["author"], "Martin Kleppmann")
+        self.assertEqual(result["year"], 2017)
+        self.assertEqual(result["isbn"], "9781449373320")
+        self.assertEqual(result["language"], "en")
+        self.assertEqual(mock_fetch_json.call_count, 2)
+
 
 class TestSearchOpenLibrary(unittest.TestCase):
     """Tests for search_open_library function."""
@@ -523,6 +556,35 @@ class TestSearchOpenLibrary(unittest.TestCase):
         self.assertEqual(result["isbn"], "9785171123456")
         self.assertEqual(result["pages"], 672)
         self.assertEqual(result["cover_url"], "https://covers.openlibrary.org/b/id/123456-L.jpg")
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_open_library_empty_docs_returns_none(self, mock_fetch_json):
+        mock_fetch_json.return_value = {"docs": []}
+        result = search_open_library("Несуществующая книга")
+        self.assertIsNone(result)
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_open_library_non_russian_language(self, mock_fetch_json):
+        mock_fetch_json.return_value = {
+            "docs": [
+                {
+                    "title": "Clean Architecture",
+                    "author_name": ["Robert C. Martin"],
+                    "first_publish_year": 2017,
+                    "publisher": ["Prentice Hall"],
+                    "isbn": ["9780134494166"],
+                    "number_of_pages_median": 432,
+                    "subject": ["Software"],
+                    "language": ["eng"],
+                    "cover_i": 654321,
+                }
+            ]
+        }
+        result = search_open_library("Clean Architecture")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["title"], "Clean Architecture")
+        self.assertEqual(result["author"], "Robert C. Martin")
+        self.assertEqual(result["language"], "eng")
 
 
 class TestAddBook(unittest.TestCase):
@@ -903,6 +965,84 @@ class TestAddBook(unittest.TestCase):
         fm = yaml.safe_load(parts[1])
         self.assertEqual(fm["title"], "Новая книга в новой директории")
 
+    @patch("scripts.book_scanner.search_open_library")
+    @patch("scripts.book_scanner.search_google_books")
+    def test_add_book_open_library_fallback_integration(self, mock_google, mock_openlib):
+        mock_google.return_value = None
+        mock_openlib.return_value = {
+            "title": "Open Library Book",
+            "author": "Open Library Author",
+            "year": 2020,
+            "publisher": "Open Publisher",
+            "isbn": "9781111111111",
+            "pages": 350,
+            "genres": ["Testing"],
+            "language": "en",
+            "description": "Found via Open Library fallback.",
+            "cover_url": None,
+        }
+
+        success = add_book(query="Test Book", force=True)
+        self.assertTrue(success)
+        mock_google.assert_called_once_with("Test Book", isbn="")
+        mock_openlib.assert_called_once_with("Test Book", isbn="")
+
+        expected_md = self.books_dir / "open-library-author-open-library-book.md"
+        self.assertTrue(expected_md.exists())
+        raw = expected_md.read_text(encoding="utf-8")
+        parts = raw.split("---")
+        self.assertGreaterEqual(len(parts), 3)
+        fm = yaml.safe_load(parts[1])
+        self.assertEqual(fm["title"], "Open Library Book")
+        self.assertEqual(fm["author"], "Open Library Author")
+        self.assertEqual(fm["year"], 2020)
+        self.assertEqual(fm["publisher"], "Open Publisher")
+        self.assertEqual(fm["isbn"], "9781111111111")
+        self.assertEqual(fm["language"], "en")
+        body = "---".join(parts[2:]).strip()
+        self.assertEqual(body, "Found via Open Library fallback.")
+
+    def test_add_book_photo_already_in_processed_dir(self):
+        photo_filename = "already_processed.jpg"
+        photo_content = b"already_processed_photo_data"
+        processed_photo = self.processed_dir / photo_filename
+        processed_photo.write_bytes(photo_content)
+
+        success = add_book(
+            title="Книга с уже обработанным фото",
+            author="Автор",
+            photo_path=str(processed_photo),
+            year=2024,
+            custom_cover="/covers/default-book.svg",
+        )
+        self.assertTrue(success)
+        self.assertTrue(processed_photo.exists())
+        self.assertEqual(processed_photo.read_bytes(), photo_content)
+
+        # No duplicate counter files created in processed_photos
+        counter_file = self.processed_dir / f"{processed_photo.stem}_1{processed_photo.suffix}"
+        self.assertFalse(counter_file.exists())
+        files_in_processed = list(self.processed_dir.iterdir())
+        self.assertEqual(files_in_processed, [processed_photo])
+
+    def test_add_book_nonexistent_photo_warns_and_proceeds(self):
+        with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+            success = add_book(
+                title="Книга с несуществующим фото",
+                author="Автор",
+                photo_path="nonexistent_photo_123.jpg",
+                year=2024,
+                custom_cover="/covers/default-book.svg",
+            )
+        self.assertTrue(success)
+        expected_md = self.books_dir / "avtor-kniga-s-nesushchestvuyushchim-foto.md"
+        self.assertTrue(expected_md.exists())
+        self.assertIn("не найден", mock_stderr.getvalue())
+
+
+class TestCLI(unittest.TestCase):
+    """Tests for CLI arguments and execution in main()."""
+
     @patch("scripts.book_scanner.add_book", return_value=True)
     def test_cli_force_argument_handling(self, mock_add_book):
         with patch.object(sys, "argv", ["book_scanner.py", "-t", "Тест", "-a", "Автор", "--force"]):
@@ -916,6 +1056,20 @@ class TestAddBook(unittest.TestCase):
         with patch.object(sys, "argv", ["book_scanner.py", "-t", "Тест", "-a", "Автор"]):
             main()
         self.assertFalse(mock_add_book.call_args[1]["force"])
+
+    def test_cli_missing_search_target_exits_with_code_1(self):
+        with patch.object(sys, "argv", ["book_scanner.py"]):
+            with patch("sys.stdout", new_callable=io.StringIO):
+                with self.assertRaises(SystemExit) as cm:
+                    main()
+            self.assertEqual(cm.exception.code, 1)
+
+    @patch("scripts.book_scanner.add_book", return_value=False)
+    def test_cli_add_book_failure_exits_with_code_1(self, mock_add_book):
+        with patch.object(sys, "argv", ["book_scanner.py", "-t", "Test", "-a", "Author"]):
+            with self.assertRaises(SystemExit) as cm:
+                main()
+            self.assertEqual(cm.exception.code, 1)
 
 
 if __name__ == "__main__":

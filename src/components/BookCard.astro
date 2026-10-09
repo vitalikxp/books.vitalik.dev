@@ -1,6 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import TagIcon from './TagIcon.astro';
+import { cleanIsbn } from '../utils/catalog.js';
 
 interface Props {
   book: CollectionEntry<'books'>;
@@ -15,7 +16,7 @@ const data = book.data;
   data-id={book.id}
   data-title={data.title.toLowerCase()}
   data-author={data.author.toLowerCase()}
-  data-isbn={(data.isbn || '').replace(/^isbn[:\s]*/i, '').replace(/[-\s\u2010-\u2015\u2212]/g, '').toLowerCase()}
+  data-isbn={cleanIsbn(data.isbn)}
   data-genres={JSON.stringify(data.genres.map((g: string) => g.toLowerCase()))}
   data-added={new Date(data.addedAt).getTime()}
   data-year={data.year || 0}
@@ -41,7 +42,7 @@ const data = book.data;
   </div>
 
   <!-- Title: Inter 18/24px, weight 600, max 2 lines (min-h-[48px] reserves 2 lines as per DESIGN.md 9.1) -->
-  <h2 class="text-[18px] leading-[24px] font-semibold text-[var(--color-text)] line-clamp-2 min-h-[48px] mb-1 group-hover:text-[var(--color-primary)] transition-colors">
+  <h2 class="text-[18px] leading-[24px] font-semibold text-[var(--color-text)] line-clamp-2 min-h-[48px] mb-1 transition-colors">
     <a href={`/books/${book.id}`} class="hover:underline focus-visible:underline">
       {data.title}
     </a>

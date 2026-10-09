@@ -136,8 +136,8 @@ if (data.status === 'reading') {
           <div class="mb-8 flex flex-wrap gap-2 items-center">
             <span class="text-[13px] font-medium text-[var(--color-muted)] mr-1">Ярлыки:</span>
             {data.genres.map((genre) => (
-              <span class="inline-flex items-center gap-1.5 text-[13px] px-3 py-1 rounded-lg bg-[var(--color-surface)] border border-[var(--color-line)] text-[var(--color-text)] font-medium">
-                <TagIcon tag={genre} class="w-3.5 h-3.5 stroke-[2] text-[var(--color-muted)] shrink-0" />
+              <span class="inline-flex items-center gap-1.5 text-[13px] leading-[18px] px-3 py-1 min-h-[26px] rounded-[var(--radius-pill)] bg-[var(--color-tag-bg)] text-[var(--color-tag-text)] border border-[var(--color-tag-border)] font-medium">
+                <TagIcon tag={genre} class="w-3.5 h-3.5 stroke-[2] shrink-0" />
                 <span>{genre}</span>
               </span>
             ))}

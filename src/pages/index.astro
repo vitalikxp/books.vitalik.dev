@@ -46,7 +46,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     <!-- Single Unified Toolbar: Search Input + Sorting Group -->
     <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-6 sm:mb-8">
       <!-- Search Bar (takes all flexible space) -->
-      <div class="relative flex-1 min-w-0">
+      <search class="relative flex-1 min-w-0" role="search">
         <label for="catalog-search" class="sr-only">Поиск по библиотеке</label>
         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[var(--color-placeholder)]">
           <Search class="w-5 h-5 stroke-[1.8]" />
@@ -66,12 +66,12 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         >
           <X class="w-5 h-5 stroke-[1.8]" />
         </button>
-      </div>
+      </search>
 
       <!-- Sorting Button Group for Desktop/Tablet (hidden on mobile < 768px, Fix 4) -->
       <div 
         id="catalog-sort-radiogroup"
-        class="hidden md:inline-flex items-center p-1 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] h-[48px] gap-1 shrink-0"
+        class="hidden md:inline-flex items-center p-0.5 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] h-[48px] gap-1 shrink-0"
         role="radiogroup" 
         aria-label="Сортировка книг"
       >
@@ -200,6 +200,8 @@ const sortedBooks = [...allBooks].sort((a, b) => {
   let searchDebounceTimer: number | undefined;
 
   function initCatalogController() {
+    if (!document.getElementById('catalog-grid')) return;
+
     const searchInput = document.getElementById('catalog-search') as HTMLInputElement | null;
     const searchClearBtn = document.getElementById('search-clear-btn');
     const resetAllBtn = document.getElementById('reset-all-btn');
@@ -344,18 +346,25 @@ const sortedBooks = [...allBooks].sort((a, b) => {
           if (catalogGrid) catalogGrid.classList.add('hidden');
 
           const resetBtnText = resetAllBtn?.querySelector('span');
-          if (selectedGenre && !searchQuery) {
+          if (gridItems.length === 0) {
+            if (emptyTitle) emptyTitle.textContent = 'В библиотеке пока нет книг';
+            if (emptyDesc) emptyDesc.textContent = 'В вашей библиотеке пока нет ни одной книги.';
+            if (resetAllBtn) resetAllBtn.classList.add('hidden');
+          } else if (selectedGenre && !searchQuery) {
             if (emptyTitle) emptyTitle.textContent = 'В этом ярлыке пока нет книг';
             if (emptyDesc) emptyDesc.textContent = 'С выбранным ярлыком пока нет книг.';
             if (resetBtnText) resetBtnText.textContent = 'Все книги';
+            if (resetAllBtn) resetAllBtn.classList.remove('hidden');
           } else if (!selectedGenre && searchQuery) {
             if (emptyTitle) emptyTitle.textContent = 'Книги не найдены';
             if (emptyDesc) emptyDesc.textContent = 'По вашему текущему запросу ничего не найдено.';
             if (resetBtnText) resetBtnText.textContent = 'Очистить поиск';
+            if (resetAllBtn) resetAllBtn.classList.remove('hidden');
           } else {
             if (emptyTitle) emptyTitle.textContent = 'Книги не найдены';
             if (emptyDesc) emptyDesc.textContent = 'По вашему текущему запросу и ярлыку ничего не найдено.';
             if (resetBtnText) resetBtnText.textContent = 'Сбросить поиск и ярлык';
+            if (resetAllBtn) resetAllBtn.classList.remove('hidden');
           }
         } else {
           emptyState.classList.add('hidden');
@@ -425,6 +434,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
     // Sorting state updater with roving tabindex and mobile select sync (Fix 4)
     function setSort(sortVal: string, moveFocus = false) {
+      flushPendingSearch();
       currentSort = sortVal;
 
       if (mobileSortSelect && mobileSortSelect.value !== sortVal) {
@@ -509,10 +519,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     }
 
     resetAllBtn?.addEventListener('click', () => {
-      if (searchDebounceTimer) {
-        clearTimeout(searchDebounceTimer);
-        searchDebounceTimer = undefined;
-      }
+      flushPendingSearch();
 
       if (selectedGenre && !searchQuery) {
         resetAllFilters();
