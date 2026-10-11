@@ -512,6 +512,85 @@ class TestSearchGoogleBooks(unittest.TestCase):
         self.assertIsNone(result)
         self.assertEqual(mock_fetch_json.call_count, 1)
 
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_google_books_handles_none_and_non_string_authors(self, mock_fetch_json):
+        mock_fetch_json.return_value = {
+            "items": [
+                {
+                    "volumeInfo": {
+                        "title": "Тестовая книга",
+                        "authors": ["Автор 1", None, 123, ""],
+                    }
+                }
+            ]
+        }
+        result = search_google_books("Тестовая книга")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["author"], "Автор 1, 123")
+
+        # Authors array with only None
+        mock_fetch_json.return_value = {
+            "items": [
+                {
+                    "volumeInfo": {
+                        "title": "Тестовая книга 2",
+                        "authors": [None],
+                    }
+                }
+            ]
+        }
+        result_none = search_google_books("Тестовая книга 2")
+        self.assertIsNotNone(result_none)
+        self.assertEqual(result_none["author"], "Неизвестный автор")
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_google_books_handles_integer_published_date(self, mock_fetch_json):
+        mock_fetch_json.return_value = {
+            "items": [
+                {
+                    "volumeInfo": {
+                        "title": "Книга с int годом",
+                        "publishedDate": 2024,
+                    }
+                }
+            ]
+        }
+        result = search_google_books("Книга с int годом")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["year"], 2024)
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_google_books_handles_none_in_industry_identifiers(self, mock_fetch_json):
+        mock_fetch_json.return_value = {
+            "items": [
+                {
+                    "volumeInfo": {
+                        "title": "Книга с None в идентификаторах",
+                        "industryIdentifiers": [None, {"type": "ISBN_10", "identifier": "5041100575"}],
+                    }
+                }
+            ]
+        }
+        result = search_google_books("Книга с None в идентификаторах")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["isbn"], "5041100575")
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_google_books_only_isbn_10(self, mock_fetch_json):
+        mock_fetch_json.return_value = {
+            "items": [
+                {
+                    "volumeInfo": {
+                        "title": "Книга только с ISBN-10",
+                        "industryIdentifiers": [{"type": "ISBN_10", "identifier": "5041100575"}],
+                    }
+                }
+            ]
+        }
+        result = search_google_books("Книга только с ISBN-10")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["isbn"], "5041100575")
+
 
 class TestSearchOpenLibrary(unittest.TestCase):
     """Tests for search_open_library function."""
@@ -641,6 +720,27 @@ class TestSearchOpenLibrary(unittest.TestCase):
         result_empty = search_open_library("Тест 2")
         self.assertIsNotNone(result_empty)
         self.assertEqual(result_empty["author"], "Неизвестный автор")
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_open_library_handles_none_doc(self, mock_fetch_json):
+        mock_fetch_json.return_value = {"docs": [None]}
+        result = search_open_library("Тест")
+        self.assertIsNone(result)
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_open_library_missing_cover_i(self, mock_fetch_json):
+        mock_fetch_json.return_value = {
+            "docs": [
+                {
+                    "title": "Книга без обложки",
+                    "author_name": ["Автор"],
+                    "cover_i": None,
+                }
+            ]
+        }
+        result = search_open_library("Книга без обложки")
+        self.assertIsNotNone(result)
+        self.assertIsNone(result["cover_url"])
 
 
 class TestAddBook(unittest.TestCase):
@@ -802,6 +902,88 @@ class TestAddBook(unittest.TestCase):
         renamed_file = self.processed_dir / "duplicate_1.jpg"
         self.assertTrue(renamed_file.exists())
         self.assertEqual(renamed_file.read_bytes(), new_content)
+
+    def test_add_book_multiple_photo_collisions_increment_counter(self):
+        photo_filename = "multi_dup.jpg"
+        (self.processed_dir / photo_filename).write_bytes(b"content_orig")
+        (self.processed_dir / "multi_dup_1.jpg").write_bytes(b"content_1")
+
+        incoming_file = self.incoming_dir / photo_filename
+        incoming_file.write_bytes(b"content_2")
+
+        success = add_book(
+            title="Третья книга",
+            author="Автор",
+            photo_path=photo_filename,
+            year=2023,
+            custom_cover="/covers/default-book.svg",
+        )
+        self.assertTrue(success)
+        self.assertFalse(incoming_file.exists())
+        self.assertTrue((self.processed_dir / "multi_dup_2.jpg").exists())
+        self.assertEqual((self.processed_dir / "multi_dup_2.jpg").read_bytes(), b"content_2")
+
+    def test_add_book_photo_root_relative_path_relocation(self):
+        sub_incoming = self.incoming_dir / "subfolder"
+        sub_incoming.mkdir()
+        photo_file = sub_incoming / "nested_photo.jpg"
+        photo_file.write_bytes(b"nested_content")
+
+        success = add_book(
+            title="Книга с вложенным фото",
+            author="Автор",
+            photo_path=str(Path("incoming_photos") / "subfolder" / "nested_photo.jpg"),
+            year=2024,
+            custom_cover="/covers/default-book.svg",
+        )
+        self.assertTrue(success)
+        self.assertFalse(photo_file.exists())
+        self.assertTrue((self.processed_dir / "nested_photo.jpg").exists())
+
+    def test_add_book_cover_without_leading_slash_normalized(self):
+        success = add_book(
+            title="Книга с обложкой без слэша",
+            author="Автор",
+            year=2024,
+            custom_cover="covers/my_cover.jpg",
+        )
+        self.assertTrue(success)
+        expected_md = self.books_dir / "avtor-kniga-s-oblozhkoy-bez-slesha.md"
+        self.assertTrue(expected_md.exists())
+        raw = expected_md.read_text(encoding="utf-8")
+        fm = yaml.safe_load(raw.split("---")[1])
+        self.assertEqual(fm["cover"], "/covers/my_cover.jpg")
+
+    def test_add_book_whitespace_title_author_fallback(self):
+        success = add_book(
+            title="   ",
+            author="   ",
+            year=2024,
+            custom_cover="/covers/default-book.svg",
+            force=True,
+        )
+        self.assertTrue(success)
+        expected_md = self.books_dir / "neizvestnyy-avtor-bez-nazvaniya.md"
+        self.assertTrue(expected_md.exists())
+        raw = expected_md.read_text(encoding="utf-8")
+        fm = yaml.safe_load(raw.split("---")[1])
+        self.assertEqual(fm["title"], "Без названия")
+        self.assertEqual(fm["author"], "Неизвестный автор")
+
+    def test_add_book_default_description_body_generated(self):
+        success = add_book(
+            title="Книга с дефолтным описанием",
+            author="Автор Описания",
+            year=2024,
+            custom_cover="/covers/default-book.svg",
+            force=True,
+        )
+        self.assertTrue(success)
+        expected_md = self.books_dir / "avtor-opisaniya-kniga-s-defoltnym-opisaniem.md"
+        self.assertTrue(expected_md.exists())
+        raw = expected_md.read_text(encoding="utf-8")
+        body = "---".join(raw.split("---")[2:]).strip()
+        self.assertEqual(body, "Экземпляр бумажной книги «Книга с дефолтным описанием» (Автор Описания).")
 
     @patch("scripts.book_scanner.search_google_books")
     def test_add_book_whitespace_query_fallback(self, mock_search):

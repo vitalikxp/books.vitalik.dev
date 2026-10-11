@@ -12,7 +12,7 @@ const data = book.data;
 ---
 
 <article 
-  class="book-item group flex flex-col w-full text-left"
+  class="book-item group flex flex-col w-full max-w-[320px] mx-auto sm:max-w-none text-left"
   data-id={book.id}
   data-title={data.title.toLowerCase()}
   data-author={data.author.toLowerCase()}
@@ -27,7 +27,7 @@ const data = book.data;
       href={`/books/${book.id}`}
       tabindex="-1"
       aria-hidden="true"
-      class="block relative max-w-full max-h-full book-cover-container transition-transform duration-150 focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-3"
+      class="block relative max-w-full max-h-full book-cover-container transition-transform duration-150 group-hover:shadow-[var(--shadow-cover-hover)] focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-3"
     >
       <img 
         src={data.cover} 
@@ -43,7 +43,7 @@ const data = book.data;
 
   <!-- Title: Inter 18/24px, weight 600, max 2 lines (min-h-[48px] reserves 2 lines as per DESIGN.md 9.1) -->
   <h2 class="text-[18px] leading-[24px] font-semibold text-[var(--color-text)] line-clamp-2 min-h-[48px] mb-1 transition-colors">
-    <a href={`/books/${book.id}`} class="hover:underline focus-visible:underline">
+    <a href={`/books/${book.id}`} class="hover:underline group-hover:underline focus-visible:underline">
       {data.title}
     </a>
   </h2>

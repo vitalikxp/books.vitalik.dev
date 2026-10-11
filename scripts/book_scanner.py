@@ -120,21 +120,16 @@ def download_image(url: str, dest_path: Path) -> bool:
         if tmp_path.exists() and tmp_path.stat().st_size > 0:
             tmp_path.replace(dest_path)
             return True
-        else:
-            if tmp_path.exists():
-                try:
-                    tmp_path.unlink()
-                except Exception:
-                    pass
-            return False
+        return False
     except Exception as e:
+        print(f"[!] Не удалось скачать обложку {url}: {e}", file=sys.stderr)
+        return False
+    finally:
         if tmp_path.exists():
             try:
                 tmp_path.unlink()
             except Exception:
                 pass
-        print(f"[!] Не удалось скачать обложку {url}: {e}", file=sys.stderr)
-        return False
 
 def search_google_books(query: str, isbn: str = None):
     clean_isbn = re.sub(r'(?i)^isbn(?:[-\s]?1[03])?[:\s]*|[-\s\u2010-\u2015\u2212]', '', isbn or '')
@@ -157,7 +152,7 @@ def search_google_books(query: str, isbn: str = None):
     # Extract ISBN
     found_isbn = ""
     for id_info in (info.get('industryIdentifiers') or []):
-        if id_info.get('type') in ['ISBN_13', 'ISBN_10']:
+        if isinstance(id_info, dict) and id_info.get('type') in ['ISBN_13', 'ISBN_10']:
             found_isbn = id_info.get('identifier', '')
             if id_info.get('type') == 'ISBN_13':
                 break
@@ -171,12 +166,12 @@ def search_google_books(query: str, isbn: str = None):
         # Attempt to upgrade zoom if possible
         cover_url = re.sub(r'&zoom=\d', '&zoom=2', cover_url)
 
-    published_date = info.get('publishedDate') or ''
+    published_date = str(info.get('publishedDate') or '')
     year_match = re.search(r'\d{4}', published_date)
     year = int(year_match.group(0)) if year_match else None
 
     authors = info.get('authors', [])
-    author_str = ", ".join(authors) if authors else "Неизвестный автор"
+    author_str = ", ".join(str(a) for a in authors if a) or "Неизвестный автор"
 
     return {
         'title': info.get('title', ''),
@@ -202,6 +197,8 @@ def search_open_library(query: str, isbn: str = None):
         return None
 
     doc = data['docs'][0]
+    if not doc or not isinstance(doc, dict):
+        return None
     cover_i = doc.get('cover_i')
     cover_url = f"https://covers.openlibrary.org/b/id/{cover_i}-L.jpg" if cover_i else None
 
@@ -335,9 +332,16 @@ author: {json.dumps(final_author, ensure_ascii=False)}
 """
 
     tmp_md = md_file.with_name(f"{md_file.name}.tmp")
-    with open(tmp_md, 'w', encoding='utf-8') as f:
-        f.write(content)
-    tmp_md.replace(md_file)
+    try:
+        with open(tmp_md, 'w', encoding='utf-8') as f:
+            f.write(content)
+        tmp_md.replace(md_file)
+    finally:
+        if tmp_md.exists():
+            try:
+                tmp_md.unlink()
+            except Exception:
+                pass
     try:
         rel_md = md_file.relative_to(ROOT_DIR)
     except ValueError:

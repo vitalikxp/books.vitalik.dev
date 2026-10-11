@@ -174,7 +174,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         <h3 id="empty-title" class="font-['Inter'] text-[20px] font-semibold leading-[28px] text-[var(--color-heading)] mb-2">
           Книги не найдены
         </h3>
-        <p id="empty-description" class="text-[15px] text-[var(--color-muted)] max-w-md mx-auto mb-6">
+        <p id="empty-description" class="text-[16px] leading-[24px] text-[var(--color-muted)] max-w-md mx-auto mb-6">
           По вашему текущему запросу и ярлыкам ничего не найдено.
         </p>
         <button
@@ -239,6 +239,9 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     const initialGenre = new URLSearchParams(window.location.search).get('genre');
     let selectedGenre = initialGenre ? normalize(initialGenre) : '';
     let currentSort = 'recent'; // recent, title, author
+    if (mobileSortSelect) {
+      mobileSortSelect.value = currentSort;
+    }
 
     function flushPendingSearch() {
       if (searchDebounceTimer) {
@@ -272,16 +275,16 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
         if (isActive) {
           btn.setAttribute('aria-current', 'page');
-          btn.classList.add('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]');
-          btn.classList.remove('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
+          btn.classList.add('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]', 'font-medium');
+          btn.classList.remove('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]', 'font-normal');
           countSpan?.classList.add('text-[var(--color-on-primary)]');
           countSpan?.classList.remove('text-[var(--color-muted)]');
           iconWrap?.classList.remove('text-[var(--color-muted)]');
           iconWrap?.classList.add('text-[var(--color-on-primary)]');
         } else {
           btn.removeAttribute('aria-current');
-          btn.classList.remove('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]');
-          btn.classList.add('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]');
+          btn.classList.remove('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]', 'font-medium');
+          btn.classList.add('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]', 'font-normal');
           countSpan?.classList.remove('text-[var(--color-on-primary)]');
           countSpan?.classList.add('text-[var(--color-muted)]');
           iconWrap?.classList.add('text-[var(--color-muted)]');

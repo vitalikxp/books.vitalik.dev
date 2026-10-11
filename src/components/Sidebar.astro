@@ -14,6 +14,8 @@ const {
   isMobileDrawer = false,
 } = Astro.props;
 const isHome = Astro.url.pathname === '/';
+const currentGenre = Astro.url.searchParams.get('genre')?.toLowerCase().trim() || '';
+const isAllBooksSelected = isHome && !currentGenre;
 ---
 
 <aside 
@@ -30,7 +32,7 @@ const isHome = Astro.url.pathname === '/';
       <div class="text-[var(--color-heading)] group-hover:text-[var(--color-primary)] transition-colors">
         <BookOpen class={`${isMobileDrawer ? 'w-6 h-6' : 'w-8 h-8'} stroke-[1.8]`} />
       </div>
-      <span class={`font-['Lora'] ${isMobileDrawer ? 'text-[22px]' : 'text-[26px]'} leading-tight font-medium text-[var(--color-heading)] tracking-[-0.01em]`}>
+      <span class={`font-['Lora'] ${isMobileDrawer ? 'text-[22px]' : 'text-[28px] leading-[36px]'} font-medium text-[var(--color-heading)] tracking-[-0.01em]`}>
         Моя библиотека
       </span>
     </a>
@@ -49,62 +51,68 @@ const isHome = Astro.url.pathname === '/';
   <!-- Navigation items -->
   <nav class={`flex-1 overflow-y-auto space-y-6 ${isMobileDrawer ? 'pr-2' : 'pr-1 -mr-1'}`} aria-label="Разделы каталога">
     <!-- Tags Section in Sidebar -->
-    {genres.length > 0 && (
-      <div>
-        <div class="px-3 mb-2.5 text-[13px] font-medium tracking-[0.08em] text-[var(--color-muted)] uppercase flex items-center gap-2">
-          <Tag class="w-3.5 h-3.5 stroke-[2]" />
-          <span>ЯРЛЫКИ</span>
-        </div>
-        <ul class="space-y-0.5" role="list">
-          <!-- All Books (Reset Tag Filter) -->
-          <li>
-            <a
-              href="/"
-              data-nav-genre=""
-              aria-current={isHome ? 'page' : undefined}
-              class={`nav-genre-btn w-full min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-[var(--radius-nav)] text-[15px] font-normal transition-colors cursor-pointer text-left group ${
-                isHome
-                  ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)]'
-                  : 'text-[var(--color-text)] hover:bg-[var(--color-hover-surface)]'
-              }`}
-            >
-              <div class="flex items-center gap-2.5 min-w-0">
-                <span class={`tag-icon-wrap shrink-0 ${isHome ? 'text-[var(--color-on-primary)]' : 'text-[var(--color-muted)]'} group-hover:text-[var(--color-text)] transition-colors`}>
-                  <Library class="w-4 h-4 stroke-[1.8]" />
-                </span>
-                <span class="truncate">Все книги</span>
-              </div>
-              {totalBooks > 0 && (
-                <span class={`genre-count font-mono text-[13px] shrink-0 ml-2 ${isHome ? 'text-[var(--color-on-primary)]' : 'text-[var(--color-muted)]'} group-hover:text-[var(--color-text)]`}>
-                  {totalBooks}
-                </span>
-              )}
-            </a>
-          </li>
+    <div>
+      <div class="px-3 mb-2.5 text-[13px] font-medium tracking-[0.08em] text-[var(--color-muted)] uppercase flex items-center gap-2">
+        <Tag class="w-3.5 h-3.5 stroke-[2]" />
+        <span>ЯРЛЫКИ</span>
+      </div>
+      <ul class="space-y-0.5" role="list">
+        <!-- All Books (Reset Tag Filter) -->
+        <li>
+          <a
+            href="/"
+            data-nav-genre=""
+            aria-current={isAllBooksSelected ? 'page' : undefined}
+            class={`nav-genre-btn w-full min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-[var(--radius-nav)] text-[15px] transition-colors cursor-pointer text-left group ${
+              isAllBooksSelected
+                ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)] font-medium'
+                : 'text-[var(--color-text)] hover:bg-[var(--color-hover-surface)] font-normal'
+            }`}
+          >
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class={`tag-icon-wrap shrink-0 ${isAllBooksSelected ? 'text-[var(--color-on-primary)]' : 'text-[var(--color-muted)]'} group-hover:text-[var(--color-text)] transition-colors`}>
+                <Library class="w-4 h-4 stroke-[1.8]" />
+              </span>
+              <span class="truncate">Все книги</span>
+            </div>
+            {totalBooks > 0 && (
+              <span class={`genre-count font-mono text-[13px] shrink-0 ml-2 ${isAllBooksSelected ? 'text-[var(--color-on-primary)]' : 'text-[var(--color-muted)]'} group-hover:text-[var(--color-text)]`}>
+                {totalBooks}
+              </span>
+            )}
+          </a>
+        </li>
 
-          <!-- Specific Tag Items -->
-          {genres.map((g) => (
+        <!-- Specific Tag Items -->
+        {genres.map((g) => {
+          const isGenreActive = isHome && currentGenre === g.name.toLowerCase();
+          return (
             <li>
               <a
                 href={`/?genre=${encodeURIComponent(g.name.toLowerCase())}`}
                 data-nav-genre={g.name.toLowerCase()}
-                class="nav-genre-btn w-full min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-[var(--radius-nav)] text-[15px] font-normal text-[var(--color-text)] hover:bg-[var(--color-hover-surface)] transition-colors cursor-pointer text-left group"
+                aria-current={isGenreActive ? 'page' : undefined}
+                class={`nav-genre-btn w-full min-h-[44px] flex items-center justify-between px-3.5 py-2.5 rounded-[var(--radius-nav)] text-[15px] transition-colors cursor-pointer text-left group ${
+                  isGenreActive
+                    ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)] font-medium'
+                    : 'text-[var(--color-text)] hover:bg-[var(--color-hover-surface)] font-normal'
+                }`}
               >
                 <div class="flex items-center gap-2.5 min-w-0">
-                  <span class="tag-icon-wrap text-[var(--color-muted)] group-hover:text-[var(--color-text)] transition-colors shrink-0">
+                  <span class={`tag-icon-wrap shrink-0 ${isGenreActive ? 'text-[var(--color-on-primary)]' : 'text-[var(--color-muted)]'} group-hover:text-[var(--color-text)] transition-colors`}>
                     <TagIcon tag={g.name} class="w-4 h-4 stroke-[1.8]" />
                   </span>
                   <span class="truncate">{g.name}</span>
                 </div>
-                <span class="genre-count font-mono text-[13px] text-[var(--color-muted)] group-hover:text-[var(--color-text)] shrink-0 ml-2">
+                <span class={`genre-count font-mono text-[13px] shrink-0 ml-2 ${isGenreActive ? 'text-[var(--color-on-primary)]' : 'text-[var(--color-muted)]'} group-hover:text-[var(--color-text)]`}>
                   {g.count}
                 </span>
               </a>
             </li>
-          ))}
-        </ul>
-      </div>
-    )}
+          );
+        })}
+      </ul>
+    </div>
 
     <!-- Theme Selection (DESIGN.md 10.2) -->
     <div class="pt-6 border-t border-[var(--color-line)] mt-6">

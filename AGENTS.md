@@ -7,7 +7,7 @@
 - `python3 scripts/book_scanner.py` — утилита для поиска метаданных, скачивания обложек и добавления книг
 
 ## Архитектура и соглашения
-- **Стек:** Astro 5 (Content Layer API) + Preact (`@astrojs/preact`) + Tailwind CSS v4 (`@tailwindcss/vite`).
+- **Стек:** Astro (Content Layer API) + Preact (`@astrojs/preact`) + Tailwind CSS v4 (`@tailwindcss/vite`).
 - **Иконки:** Использовать `@lucide/astro` (пакет `lucide-astro` устарел).
 - **База данных книг:** Хранится в `src/content/books/<slug>.md`; схема Zod определена в `src/content.config.ts`.
 - **Каталог книг:** В каталоге присутствуют только реальные книги пользователя (без демо-данных).

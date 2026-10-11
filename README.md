@@ -23,16 +23,19 @@
 
 ```bash
 # Установка зависимостей (уже выполнена)
-npm install
+pnpm install
 
 # Запуск локального сервера разработки (http://localhost:4321)
-npm run dev
+pnpm dev
 
 # Сборка статического сайта для деплоя
-npm run build
+pnpm build
+
+# Проверка типов
+pnpm check
 
 # Предпросмотр сборки
-npm run preview
+pnpm preview
 ```
 
 ---

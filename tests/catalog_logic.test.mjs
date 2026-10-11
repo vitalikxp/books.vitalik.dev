@@ -103,6 +103,22 @@ test('2. Мультисловный поиск по названию и авто
     assert.equal(matchesSearch(bookUndefIsbn, '1984'), true);
     assert.equal(matchesSearch(bookUndefIsbn, 'несуществующее'), false);
   });
+
+  await t.test('работает корректно, когда book.title undefined, null или опущен (поиск по автору и isbn)', () => {
+    const bookNoTitle = { author: 'Лев Толстой', isbn: '978-5-00-000000-0' };
+    const bookNullTitle = { title: null, author: 'Лев Толстой', isbn: '978-5-00-000000-0' };
+    const bookUndefTitle = { title: undefined, author: 'Лев Толстой' };
+
+    assert.equal(matchesSearch(bookNoTitle, 'толстой'), true);
+    assert.equal(matchesSearch(bookNoTitle, '9785'), true);
+    assert.equal(matchesSearch(bookNoTitle, 'несуществующее'), false);
+
+    assert.equal(matchesSearch(bookNullTitle, 'толстой'), true);
+    assert.equal(matchesSearch(bookNullTitle, 'чехов'), false);
+
+    assert.equal(matchesSearch(bookUndefTitle, 'толстой'), true);
+    assert.equal(matchesSearch(bookUndefTitle, 'чехов'), false);
+  });
 });
 
 test('3. Поиск по ISBN (очистка дефисов и пробелов)', async (t) => {
@@ -570,6 +586,19 @@ test('5. Компараторы сортировки (compareBooks)', async (t) 
       'b-nan-added-2',
       'b-nan-year',
     ]);
+  });
+
+  await t.test('сортировка «recent» корректно обрабатывает нечисловой / NaN year для обоих операндов', () => {
+    const bookNanA = { id: 'b-nan-a', title: 'Книга A', added: 1000, year: 'invalid' };
+    const bookValidB = { id: 'b-valid-b', title: 'Книга B', added: 1000, year: 2024 };
+    const bookNanB = { id: 'b-nan-b', title: 'Книга C', added: 1000, year: NaN };
+
+    // When a has NaN year and b has valid year: b (2024) should precede a (0)
+    assert.ok(compareBooks(bookNanA, bookValidB, 'recent') > 0);
+    // When a has valid year and b has NaN year: a (2024) should precede b (0)
+    assert.ok(compareBooks(bookValidB, bookNanA, 'recent') < 0);
+    // When both have NaN year (year=0), tie-break is title
+    assert.ok(compareBooks(bookNanA, bookNanB, 'recent') < 0);
   });
 
   await t.test('compareBooks корректно работает и не падает с TypeError с числовыми id ({ id: 101 }), title ({ title: 1984 }) и author', () => {
