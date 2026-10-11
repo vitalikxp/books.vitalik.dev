@@ -461,6 +461,17 @@ class TestSearchGoogleBooks(unittest.TestCase):
             "https://www.googleapis.com/books/v1/volumes?q=isbn%3A5041100575&maxResults=3&langRestrict=ru"
         )
 
+        # ISBN 13: and ISBN 10: prefixes (with space)
+        search_google_books("", isbn="ISBN 13: 978-5-04-110057-5")
+        mock_fetch_json.assert_called_with(
+            "https://www.googleapis.com/books/v1/volumes?q=isbn%3A9785041100575&maxResults=3&langRestrict=ru"
+        )
+
+        search_google_books("", isbn="ISBN 10: 5-04-110057-5")
+        mock_fetch_json.assert_called_with(
+            "https://www.googleapis.com/books/v1/volumes?q=isbn%3A5041100575&maxResults=3&langRestrict=ru"
+        )
+
     @patch("scripts.book_scanner.fetch_json")
     def test_search_google_books_language_fallback(self, mock_fetch_json):
         valid_item_payload = {
@@ -494,6 +505,13 @@ class TestSearchGoogleBooks(unittest.TestCase):
         self.assertEqual(result["language"], "en")
         self.assertEqual(mock_fetch_json.call_count, 2)
 
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_google_books_error_does_not_retry(self, mock_fetch_json):
+        mock_fetch_json.return_value = None
+        result = search_google_books("Война и мир")
+        self.assertIsNone(result)
+        self.assertEqual(mock_fetch_json.call_count, 1)
+
 
 class TestSearchOpenLibrary(unittest.TestCase):
     """Tests for search_open_library function."""
@@ -526,6 +544,17 @@ class TestSearchOpenLibrary(unittest.TestCase):
         )
 
         search_open_library("", isbn="ISBN-10: 5-04-110057-5")
+        mock_fetch_json.assert_called_with(
+            "https://openlibrary.org/search.json?q=5041100575&limit=3"
+        )
+
+        # ISBN 13: and ISBN 10: prefixes (with space)
+        search_open_library("", isbn="ISBN 13: 978-5-04-110057-5")
+        mock_fetch_json.assert_called_with(
+            "https://openlibrary.org/search.json?q=9785041100575&limit=3"
+        )
+
+        search_open_library("", isbn="ISBN 10: 5-04-110057-5")
         mock_fetch_json.assert_called_with(
             "https://openlibrary.org/search.json?q=5041100575&limit=3"
         )
@@ -585,6 +614,33 @@ class TestSearchOpenLibrary(unittest.TestCase):
         self.assertEqual(result["title"], "Clean Architecture")
         self.assertEqual(result["author"], "Robert C. Martin")
         self.assertEqual(result["language"], "eng")
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_open_library_handles_non_string_authors(self, mock_fetch_json):
+        mock_fetch_json.return_value = {
+            "docs": [
+                {
+                    "title": "Книга со смешанными авторами",
+                    "author_name": ["Author", None, 123, ""],
+                }
+            ]
+        }
+        result = search_open_library("Тест")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["author"], "Author, 123")
+
+        # Test case where author_name contains only None or empty strings
+        mock_fetch_json.return_value = {
+            "docs": [
+                {
+                    "title": "Книга без валидных авторов",
+                    "author_name": [None, ""],
+                }
+            ]
+        }
+        result_empty = search_open_library("Тест 2")
+        self.assertIsNotNone(result_empty)
+        self.assertEqual(result_empty["author"], "Неизвестный автор")
 
 
 class TestAddBook(unittest.TestCase):
@@ -1038,6 +1094,61 @@ class TestAddBook(unittest.TestCase):
         expected_md = self.books_dir / "avtor-kniga-s-nesushchestvuyushchim-foto.md"
         self.assertTrue(expected_md.exists())
         self.assertIn("не найден", mock_stderr.getvalue())
+
+    def test_add_book_empty_query_and_isbn_returns_false(self):
+        result = add_book()
+        self.assertFalse(result)
+        self.assertEqual(list(self.books_dir.glob("*.md")), [])
+
+    @patch("scripts.book_scanner.download_image", return_value=True)
+    @patch("scripts.book_scanner.search_google_books")
+    def test_add_book_explicit_args_override_api_metadata(self, mock_search, mock_download):
+        mock_search.return_value = {
+            "title": "API Название",
+            "author": "API Автор",
+            "year": 1999,
+            "publisher": "API Издательство",
+            "isbn": "9780000000000",
+            "pages": 150,
+            "genres": ["API Жанр"],
+            "language": "ru",
+            "description": "API Описание",
+            "cover_url": "https://example.com/api-cover.jpg",
+        }
+        success = add_book(
+            query="API Название",
+            title="Явное Название",
+            author="Явный Автор",
+            isbn="978-5-04-110057-5",
+            year=2024,
+            publisher="Явное Издательство",
+            pages=320,
+            genres=["Явный Жанр"],
+            description="Явное описание",
+            custom_cover="https://example.com/custom-cover.jpg",
+        )
+        self.assertTrue(success)
+        expected_md = self.books_dir / "yavnyy-avtor-yavnoe-nazvanie.md"
+        self.assertTrue(expected_md.exists())
+
+        raw = expected_md.read_text(encoding="utf-8")
+        parts = raw.split("---")
+        fm = yaml.safe_load(parts[1])
+        body = "---".join(parts[2:]).strip()
+
+        self.assertEqual(fm["title"], "Явное Название")
+        self.assertEqual(fm["author"], "Явный Автор")
+        self.assertEqual(fm["isbn"], "978-5-04-110057-5")
+        self.assertEqual(fm["year"], 2024)
+        self.assertEqual(fm["publisher"], "Явное Издательство")
+        self.assertEqual(fm["pages"], 320)
+        self.assertEqual(fm["genres"], ["Явный Жанр"])
+        self.assertEqual(fm["cover"], "/covers/yavnyy-avtor-yavnoe-nazvanie.jpg")
+        self.assertEqual(body, "Явное описание")
+        mock_download.assert_called_once_with(
+            "https://example.com/custom-cover.jpg",
+            self.covers_dir / "yavnyy-avtor-yavnoe-nazvanie.jpg",
+        )
 
 
 class TestCLI(unittest.TestCase):

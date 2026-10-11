@@ -140,7 +140,7 @@ const genres = Array.from(genreMap.values())
     <!-- Mobile Navigation Drawer -->
     <div 
       id="mobile-drawer-overlay"
-      class="fixed inset-0 z-40 bg-[var(--color-scrim)] backdrop-blur-xs hidden transition-opacity duration-200 lg:hidden"
+      class="fixed inset-0 z-40 bg-[var(--color-scrim)] backdrop-blur-xs hidden pointer-events-none transition-opacity duration-200 lg:hidden"
       aria-hidden="true"
     ></div>
     <div 
@@ -184,6 +184,11 @@ const genres = Array.from(genreMap.values())
       let mediaQueryListener: ((e: MediaQueryListEvent) => void) | null = null;
 
       function initLayout() {
+        document.body.style.overflow = '';
+        document.getElementById('main-content')?.removeAttribute('inert');
+        document.getElementById('skip-to-content')?.removeAttribute('inert');
+        document.querySelector('header')?.removeAttribute('inert');
+
         const openDrawerBtn = document.getElementById('open-drawer-btn');
         const closeDrawerBtn = document.getElementById('close-drawer-btn');
         const drawerOverlay = document.getElementById('mobile-drawer-overlay');
@@ -200,6 +205,7 @@ const genres = Array.from(genreMap.values())
             openDrawerTimeout = undefined;
           }
           drawer.removeAttribute('inert');
+          drawerOverlay.classList.remove('pointer-events-none');
           drawerOverlay.classList.remove('hidden');
           document.getElementById('main-content')?.setAttribute('inert', '');
           document.getElementById('skip-to-content')?.setAttribute('inert', '');
@@ -214,10 +220,15 @@ const genres = Array.from(genreMap.values())
 
         function closeDrawer(focusTarget: 'button' | 'main' = 'button') {
           if (!drawer || !drawerOverlay) return;
+          const isDrawerOpen = drawer && !drawer.classList.contains('-translate-x-full');
+          if (!isDrawerOpen && (!drawerOverlay || drawerOverlay.classList.contains('hidden'))) {
+            return;
+          }
           if (openDrawerTimeout) {
             clearTimeout(openDrawerTimeout);
             openDrawerTimeout = undefined;
           }
+          drawerOverlay.classList.add('pointer-events-none');
           drawer.classList.add('-translate-x-full');
           drawer.setAttribute('inert', '');
           document.getElementById('main-content')?.removeAttribute('inert');
@@ -234,7 +245,9 @@ const genres = Array.from(genreMap.values())
           if (focusTarget === 'main') {
             document.getElementById('main-content')?.focus();
           } else {
-            openDrawerBtn?.focus();
+            if (window.innerWidth < 1024) {
+              openDrawerBtn?.focus();
+            }
           }
         }
 
@@ -292,6 +305,10 @@ const genres = Array.from(genreMap.values())
 
       // Teardown before page swap
       document.addEventListener('astro:before-swap', () => {
+        document.body.style.overflow = '';
+        document.getElementById('main-content')?.removeAttribute('inert');
+        document.getElementById('skip-to-content')?.removeAttribute('inert');
+        document.querySelector('header')?.removeAttribute('inert');
         if (escapeKeyListener) {
           window.removeEventListener('keydown', escapeKeyListener);
           escapeKeyListener = null;

@@ -78,6 +78,31 @@ test('2. Мультисловный поиск по названию и авто
     assert.equal(matchesSearch(sampleBook, ''), true);
     assert.equal(matchesSearch(sampleBook, '   '), true);
   });
+
+  await t.test('находит книгу, когда title равен 0 при поиске "0"', () => {
+    const bookWithZeroTitle = { title: 0, author: 'Автор' };
+    assert.equal(matchesSearch(bookWithZeroTitle, '0'), true);
+    assert.equal(matchesSearch(bookWithZeroTitle, 'автор'), true);
+  });
+
+  await t.test('работает корректно, когда book.isbn undefined, null или опущен (поиск по названию/автору и числовым запросам)', () => {
+    const bookNoIsbn = { title: '1984', author: 'Джордж Оруэлл' };
+    const bookNullIsbn = { title: '1984', author: 'Джордж Оруэлл', isbn: null };
+    const bookUndefIsbn = { title: '1984', author: 'Джордж Оруэлл', isbn: undefined };
+
+    assert.equal(matchesSearch(bookNoIsbn, 'оруэлл'), true);
+    assert.equal(matchesSearch(bookNoIsbn, '1984'), true);
+    assert.equal(matchesSearch(bookNoIsbn, 'оруэлл 1984'), true);
+    assert.equal(matchesSearch(bookNoIsbn, 'толстой'), false);
+
+    assert.equal(matchesSearch(bookNullIsbn, 'оруэлл'), true);
+    assert.equal(matchesSearch(bookNullIsbn, '1984'), true);
+    assert.equal(matchesSearch(bookNullIsbn, 'несуществующее'), false);
+
+    assert.equal(matchesSearch(bookUndefIsbn, 'оруэлл'), true);
+    assert.equal(matchesSearch(bookUndefIsbn, '1984'), true);
+    assert.equal(matchesSearch(bookUndefIsbn, 'несуществующее'), false);
+  });
 });
 
 test('3. Поиск по ISBN (очистка дефисов и пробелов)', async (t) => {
@@ -126,6 +151,8 @@ test('3. Поиск по ISBN (очистка дефисов и пробелов
     assert.equal(matchesSearch(book, 'isbn-13: 978-5-04-110057-5'), true);
     assert.equal(matchesSearch(book, 'ISBN13: 978-5-04-110057-5'), true);
     assert.equal(matchesSearch(book, 'isbn13 9785041100575'), true);
+    assert.equal(matchesSearch(book, 'ISBN 13: 978-5-04-110057-5'), true);
+    assert.equal(matchesSearch(book, 'isbn 13: 978-5-04-110057-5'), true);
 
     const book10 = {
       title: 'Computer Science для программиста-самоучки',
@@ -136,6 +163,8 @@ test('3. Поиск по ISBN (очистка дефисов и пробелов
     assert.equal(matchesSearch(book10, 'isbn-10: 5-04-110057-5'), true);
     assert.equal(matchesSearch(book10, 'ISBN10: 5-04-110057-5'), true);
     assert.equal(matchesSearch(book10, 'isbn10 5041100575'), true);
+    assert.equal(matchesSearch(book10, 'ISBN 10: 5-04-110057-5'), true);
+    assert.equal(matchesSearch(book10, 'isbn 10: 5-04-110057-5'), true);
   });
 
   await t.test('находит книгу, если ISBN в объекте книги содержит префиксы (ISBN, ISBN-13, ISBN-10)', () => {
@@ -143,6 +172,10 @@ test('3. Поиск по ISBN (очистка дефисов и пробелов
       title: 'Computer Science для программиста-самоучки',
       author: 'Кори Альтхофф',
       isbn: 'ISBN-13: 978-5-04-110057-5',
+    };
+    const bookWithSpacePrefix13 = {
+      ...bookWithPrefix13,
+      isbn: 'ISBN 13: 978-5-04-110057-5',
     };
     const bookWithPrefixPlain = {
       ...bookWithPrefix13,
@@ -152,15 +185,70 @@ test('3. Поиск по ISBN (очистка дефисов и пробелов
       ...bookWithPrefix13,
       isbn: 'ISBN-10: 5-04-110057-5',
     };
+    const bookWithSpacePrefix10 = {
+      ...bookWithPrefix13,
+      isbn: 'ISBN 10: 5-04-110057-5',
+    };
 
     assert.equal(matchesSearch(bookWithPrefix13, '9785041100575'), true);
     assert.equal(matchesSearch(bookWithPrefix13, '978-5-04-110057-5'), true);
+
+    assert.equal(matchesSearch(bookWithSpacePrefix13, '9785041100575'), true);
+    assert.equal(matchesSearch(bookWithSpacePrefix13, '978-5-04-110057-5'), true);
 
     assert.equal(matchesSearch(bookWithPrefixPlain, '9785041100575'), true);
     assert.equal(matchesSearch(bookWithPrefixPlain, '978-5-04-110057-5'), true);
 
     assert.equal(matchesSearch(bookWithPrefix10, '5041100575'), true);
     assert.equal(matchesSearch(bookWithPrefix10, '5-04-110057-5'), true);
+
+    assert.equal(matchesSearch(bookWithSpacePrefix10, '5041100575'), true);
+    assert.equal(matchesSearch(bookWithSpacePrefix10, '5-04-110057-5'), true);
+  });
+
+  await t.test('корректно обрабатывает контрольную цифру "X" / "x" в ISBN-10', () => {
+    const bookWithX = {
+      title: 'Design Patterns',
+      author: 'Erich Gamma',
+      isbn: '0-201-63361-X',
+    };
+    assert.equal(matchesSearch(bookWithX, '0-201-63361-X'), true);
+    assert.equal(matchesSearch(bookWithX, '020163361x'), true);
+    assert.equal(matchesSearch(bookWithX, '020163361X'), true);
+    assert.equal(matchesSearch(bookWithX, '0-201-63361-x'), true);
+    assert.equal(matchesSearch(bookWithX, 'ISBN-10: 0-201-63361-X'), true);
+    assert.equal(matchesSearch(bookWithX, 'ISBN 10: 0-201-63361-x'), true);
+    assert.equal(matchesSearch(bookWithX, '63361x'), true);
+    assert.equal(matchesSearch(bookWithX, '63361X'), true);
+
+    const bookWithLowerX = {
+      ...bookWithX,
+      isbn: '020163361x',
+    };
+    assert.equal(matchesSearch(bookWithLowerX, '0-201-63361-X'), true);
+    assert.equal(matchesSearch(bookWithLowerX, '020163361x'), true);
+  });
+
+  await t.test('обрабатывает книги без ISBN (undefined, null или опущен) при числовых запросах и поиске по ISBN', () => {
+    const bookNoIsbn = { title: 'О дивный новый мир', author: 'Олдос Хаксли' };
+    const bookNullIsbn = { title: 'О дивный новый мир', author: 'Олдос Хаксли', isbn: null };
+    const bookUndefIsbn = { title: 'О дивный новый мир', author: 'Олдос Хаксли', isbn: undefined };
+
+    // Числовой запрос из 4+ цифр не должен ошибочно матчить книгу без ISBN, если его нет в названии/авторе
+    assert.equal(matchesSearch(bookNoIsbn, '1984'), false);
+    assert.equal(matchesSearch(bookNullIsbn, '1984'), false);
+    assert.equal(matchesSearch(bookUndefIsbn, '1984'), false);
+
+    // Запрос с префиксом ISBN не должен матчить книгу без ISBN
+    assert.equal(matchesSearch(bookNoIsbn, 'ISBN 978-5-04-110057-5'), false);
+    assert.equal(matchesSearch(bookNullIsbn, 'ISBN 978-5-04-110057-5'), false);
+    assert.equal(matchesSearch(bookUndefIsbn, 'ISBN 978-5-04-110057-5'), false);
+
+    // Если числовой запрос '1984' содержится в названии книги без ISBN — успешно находит по названию
+    const book1984NoIsbn = { title: '1984', author: 'Джордж Оруэлл' };
+    assert.equal(matchesSearch(book1984NoIsbn, '1984'), true);
+    assert.equal(matchesSearch({ title: '1984', author: 'Джордж Оруэлл', isbn: null }, '1984'), true);
+    assert.equal(matchesSearch({ title: '1984', author: 'Джордж Оруэлл', isbn: undefined }, '1984'), true);
   });
 
   await t.test('возвращает false при несовпадающем ISBN', () => {
@@ -183,8 +271,16 @@ test('3. Поиск по ISBN (очистка дефисов и пробелов
   await t.test('cleanIsbn очищает префиксы ISBN, ISBN-10, ISBN-13, пробелы и все виды дефисов', () => {
     assert.equal(cleanIsbn('978-5-04-110057-5'), '9785041100575');
     assert.equal(cleanIsbn('ISBN-13: 978-5-04-110057-5'), '9785041100575');
+    assert.equal(cleanIsbn('ISBN 13: 978-5-04-110057-5'), '9785041100575');
+    assert.equal(cleanIsbn('isbn 13: 978-5-04-110057-5'), '9785041100575');
     assert.equal(cleanIsbn('isbn13: 978 5 04 110057 5'), '9785041100575');
     assert.equal(cleanIsbn('ISBN-10: 5-04-110057-5'), '5041100575');
+    assert.equal(cleanIsbn('ISBN 10: 5-04-110057-5'), '5041100575');
+    assert.equal(cleanIsbn('isbn 10: 5-04-110057-5'), '5041100575');
+    assert.equal(cleanIsbn('0-201-63361-X'), '020163361x');
+    assert.equal(cleanIsbn('020163361x'), '020163361x');
+    assert.equal(cleanIsbn('ISBN-10: 0-201-63361-X'), '020163361x');
+    assert.equal(cleanIsbn('ISBN 10: 0-201-63361-x'), '020163361x');
     assert.equal(cleanIsbn('ISBN 978–5–04–110057–5'), '9785041100575');
     assert.equal(cleanIsbn('978−5−04−110057−5'), '9785041100575');
     assert.equal(cleanIsbn(''), '');
@@ -408,6 +504,25 @@ test('5. Компараторы сортировки (compareBooks)', async (t) 
     const sorted = [...isoBooks].sort((a, b) => compareBooks(a, b, 'recent'));
     // Убывающий порядок: 2026-11-20 -> 2026-03-10 -> 2026-01-15
     assert.deepEqual(sorted.map((b) => b.id), ['b-nov', 'b-mar', 'b-jan']);
+  });
+
+  await t.test('сортировка «recent» корректно сравнивает Date объекты в поле added', () => {
+    const dateBooks = [
+      { id: 'b-may', title: 'Майская книга', added: new Date('2026-05-01T00:00:00Z'), year: 2026 },
+      { id: 'b-dec', title: 'Декабрьская книга', added: new Date('2026-12-01T00:00:00Z'), year: 2026 },
+      { id: 'b-jan', title: 'Январская книга', added: new Date('2026-01-01T00:00:00Z'), year: 2026 },
+    ];
+    const sorted = [...dateBooks].sort((a, b) => compareBooks(a, b, 'recent'));
+    // Убывающий порядок: 2026-12-01 -> 2026-05-01 -> 2026-01-01
+    assert.deepEqual(sorted.map((b) => b.id), ['b-dec', 'b-may', 'b-jan']);
+
+    const mixedBooks = [
+      { id: 'b-date', title: 'Книга Date', added: new Date('2026-06-01T00:00:00Z') },
+      { id: 'b-timestamp', title: 'Книга Timestamp', added: new Date('2026-07-01T00:00:00Z').getTime() },
+      { id: 'b-iso', title: 'Книга ISO', added: '2026-05-01T00:00:00Z' },
+    ];
+    const sortedMixed = [...mixedBooks].sort((a, b) => compareBooks(a, b, 'recent'));
+    assert.deepEqual(sortedMixed.map((b) => b.id), ['b-timestamp', 'b-date', 'b-iso']);
   });
 
   await t.test('тай-брейк по id при совпадающих названии и авторе', () => {

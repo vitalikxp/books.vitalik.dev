@@ -17,7 +17,7 @@ export function normalize(text) {
  */
 export function cleanIsbn(isbn) {
   return normalize(isbn)
-    .replace(/^isbn(?:-?1[03])?[:\s]*/i, '')
+    .replace(/^isbn(?:[-\s]?1[03])?[:\s]*/i, '')
     .replace(/[-\s\u2010-\u2015\u2212]/g, '');
 }
 
@@ -35,8 +35,8 @@ export function matchesSearch(book, searchQuery) {
   const normalizedQuery = normalize(searchQuery);
   if (!normalizedQuery) return true;
 
-  const title = normalize(book.title || '');
-  const author = normalize(book.author || '');
+  const title = normalize(book.title ?? '');
+  const author = normalize(book.author ?? '');
   const cleanIsbnValue = cleanIsbn(book.isbn);
   const cleanQuery = cleanIsbn(normalizedQuery);
   const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);

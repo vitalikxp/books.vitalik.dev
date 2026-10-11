@@ -137,14 +137,14 @@ def download_image(url: str, dest_path: Path) -> bool:
         return False
 
 def search_google_books(query: str, isbn: str = None):
-    clean_isbn = re.sub(r'(?i)^isbn(?:-?1[03])?[:\s]*|[-\s\u2010-\u2015\u2212]', '', isbn or '')
+    clean_isbn = re.sub(r'(?i)^isbn(?:[-\s]?1[03])?[:\s]*|[-\s\u2010-\u2015\u2212]', '', isbn or '')
     q = f"isbn:{clean_isbn}" if clean_isbn else query
     encoded_q = urllib.parse.quote(q)
     url = f"https://www.googleapis.com/books/v1/volumes?q={encoded_q}&maxResults=3&langRestrict=ru"
     data = fetch_json(url)
 
-    # If no results in Russian, search without language restriction
-    if not data or not data.get('items'):
+    # If request succeeded but no items found in Russian, search without language restriction
+    if data and not data.get('items'):
         url = f"https://www.googleapis.com/books/v1/volumes?q={encoded_q}&maxResults=3"
         data = fetch_json(url)
 
@@ -192,7 +192,7 @@ def search_google_books(query: str, isbn: str = None):
     }
 
 def search_open_library(query: str, isbn: str = None):
-    clean_isbn = re.sub(r'(?i)^isbn(?:-?1[03])?[:\s]*|[-\s\u2010-\u2015\u2212]', '', isbn or '')
+    clean_isbn = re.sub(r'(?i)^isbn(?:[-\s]?1[03])?[:\s]*|[-\s\u2010-\u2015\u2212]', '', isbn or '')
     q = clean_isbn if clean_isbn else query
     encoded_q = urllib.parse.quote(q)
     url = f"https://openlibrary.org/search.json?q={encoded_q}&limit=3"
@@ -210,7 +210,7 @@ def search_open_library(query: str, isbn: str = None):
 
     return {
         'title': doc.get('title', ''),
-        'author': ", ".join(doc.get('author_name') or []) or "Неизвестный автор",
+        'author': ", ".join(str(a) for a in (doc.get('author_name') or []) if a) or "Неизвестный автор",
         'year': doc.get('first_publish_year'),
         'publisher': (doc.get('publisher') or [''])[0] if doc.get('publisher') else '',
         'isbn': (doc.get('isbn') or [''])[0] if doc.get('isbn') else '',

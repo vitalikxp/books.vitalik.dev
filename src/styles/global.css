@@ -78,6 +78,8 @@
     --catalog-columns: 4;
     --catalog-column-gap: 48px;
     --catalog-row-gap: 40px;
+    --toolbar-gap: 12px;
+    --toolbar-to-grid: 44px;
 
     --cover-width: 220px;
     --cover-height: 312px;
@@ -88,6 +90,10 @@
     --control-min-height: 44px;
     --nav-row-min-height: 44px;
     --tag-min-height: 22px;
+
+    --border-width: 1px;
+    --focus-width: 3px;
+    --focus-offset: 3px;
 
     /* Focus & transitions */
     --focus-ring: 3px solid var(--color-focus);
@@ -240,6 +246,11 @@ body {
 }
 .nav-genre-btn[aria-current="page"]:hover {
   background-color: var(--color-primary-hover);
+}
+.nav-genre-btn[aria-current="page"]:active {
+  background-color: var(--color-primary-active);
+  outline: 1px solid var(--color-on-primary);
+  outline-offset: -1px;
 }
 .nav-genre-btn[aria-current="page"] .tag-icon-wrap,
 .nav-genre-btn[aria-current="page"] .genre-count {

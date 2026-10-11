@@ -44,7 +44,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     <h1 class="sr-only">Каталог книг</h1>
 
     <!-- Single Unified Toolbar: Search Input + Sorting Group -->
-    <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-6 sm:mb-8">
+    <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3 mb-6 sm:mb-8 lg:mb-11">
       <!-- Search Bar (takes all flexible space) -->
       <search class="relative flex-1 min-w-0" role="search">
         <label for="catalog-search" class="sr-only">Поиск по библиотеке</label>
@@ -156,10 +156,10 @@ const sortedBooks = [...allBooks].sort((a, b) => {
 
     <!-- Catalog Content -->
     <div id="catalog-container">
-      <!-- Grid View: 4 columns on desktop, gap 56px -->
+      <!-- Grid View: 4 columns on desktop, gap 48px/40px -->
       <div 
         id="catalog-grid" 
-        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 sm:gap-x-8 xl:gap-x-14 gap-y-8"
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 sm:gap-x-8 xl:gap-x-12 gap-y-10"
       >
         {sortedBooks.map((book) => (
           <BookCard book={book} />
