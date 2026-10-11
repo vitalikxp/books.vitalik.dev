@@ -159,7 +159,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
       <!-- Grid View: 4 columns on desktop, gap 48px/40px -->
       <div 
         id="catalog-grid" 
-        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 sm:gap-x-8 xl:gap-x-12 gap-y-10"
+        class={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 sm:gap-x-8 xl:gap-x-12 gap-y-10 ${sortedBooks.length === 0 ? 'hidden' : ''}`}
       >
         {sortedBooks.map((book) => (
           <BookCard book={book} />
@@ -167,20 +167,20 @@ const sortedBooks = [...allBooks].sort((a, b) => {
       </div>
 
       <!-- Empty Results State -->
-      <div id="empty-state" class="hidden text-center py-20 px-4">
+      <div id="empty-state" class={`${sortedBooks.length === 0 ? '' : 'hidden'} text-center py-20 px-4`}>
         <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[var(--color-hover-surface)] flex items-center justify-center text-[var(--color-muted)]">
           <BookOpen class="w-8 h-8 stroke-[1.5]" />
         </div>
         <h3 id="empty-title" class="font-['Inter'] text-[20px] font-semibold leading-[28px] text-[var(--color-heading)] mb-2">
-          Книги не найдены
+          {sortedBooks.length === 0 ? 'В библиотеке пока нет книг' : 'Книги не найдены'}
         </h3>
         <p id="empty-description" class="text-[16px] leading-[24px] text-[var(--color-muted)] max-w-md mx-auto mb-6">
-          По вашему текущему запросу и ярлыкам ничего не найдено.
+          {sortedBooks.length === 0 ? 'Добавьте первую книгу с помощью скрипта scripts/book_scanner.py.' : 'По вашему текущему запросу и ярлыкам ничего не найдено.'}
         </p>
         <button
           type="button"
           id="reset-all-btn"
-          class="h-[46px] px-6 rounded-[var(--radius-control)] bg-[var(--color-primary)] text-[var(--color-on-primary)] text-[15px] font-medium hover:bg-[var(--color-primary-hover)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-3 transition-colors cursor-pointer inline-flex items-center gap-2"
+          class={`h-[46px] px-6 rounded-[var(--radius-control)] bg-[var(--color-primary)] text-[var(--color-on-primary)] text-[15px] font-medium hover:bg-[var(--color-primary-hover)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-3 transition-colors cursor-pointer inline-flex items-center gap-2 ${sortedBooks.length === 0 ? 'hidden' : ''}`}
         >
           <RotateCcw class="w-4 h-4 stroke-[2]" />
           <span>Сбросить поиск и ярлыки</span>

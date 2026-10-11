@@ -202,6 +202,13 @@ class TestFetchJson(unittest.TestCase):
         result = fetch_json("https://example.com/api/test")
         self.assertEqual(result, {"status": "ok", "items": [1, 2, 3]})
 
+    def test_fetch_json_empty_or_invalid_url_returns_none(self):
+        self.assertIsNone(fetch_json(""))
+        self.assertIsNone(fetch_json("   "))
+        self.assertIsNone(fetch_json(None))
+        self.assertIsNone(fetch_json(123))
+        self.assertIsNone(fetch_json("not-a-valid-url"))
+
 
 class TestDownloadImage(unittest.TestCase):
     """Tests for download_image atomic writes, error handling, and preservation."""
@@ -212,6 +219,13 @@ class TestDownloadImage(unittest.TestCase):
 
     def tearDown(self):
         self.temp_dir.cleanup()
+
+    def test_download_image_empty_or_invalid_url_returns_false(self):
+        self.assertFalse(download_image("", self.dest_path))
+        self.assertFalse(download_image("   ", self.dest_path))
+        self.assertFalse(download_image(None, self.dest_path))
+        self.assertFalse(download_image(123, self.dest_path))
+        self.assertFalse(download_image("invalid-url-scheme", self.dest_path))
 
     @patch("urllib.request.urlopen")
     def test_download_valid_image_success(self, mock_urlopen):
@@ -621,6 +635,28 @@ class TestSearchGoogleBooks(unittest.TestCase):
         result = search_google_books("Некорректный ответ")
         self.assertIsNone(result)
 
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_google_books_handles_non_dict_image_links_and_non_list_fields(self, mock_fetch_json):
+        mock_fetch_json.return_value = {
+            "items": [
+                {
+                    "volumeInfo": {
+                        "title": "Нестандартный формат",
+                        "imageLinks": "https://example.com/direct-cover.jpg",
+                        "industryIdentifiers": "not-a-list",
+                        "authors": "Единичный Автор",
+                        "categories": "Единичная Категория",
+                    }
+                }
+            ]
+        }
+        result = search_google_books("Нестандартный формат")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["author"], "Единичный Автор")
+        self.assertEqual(result["genres"], ["Единичная Категория"])
+        self.assertEqual(result["isbn"], "")
+        self.assertIsNone(result["cover_url"])
+
 
 class TestSearchOpenLibrary(unittest.TestCase):
     """Tests for search_open_library function."""
@@ -789,6 +825,26 @@ class TestSearchOpenLibrary(unittest.TestCase):
         self.assertEqual(result["year"], 1920)
         self.assertEqual(result["pages"], 350)
         self.assertEqual(result["genres"], ["Классика", "123"])
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_open_library_handles_string_publisher_and_isbn(self, mock_fetch_json):
+        mock_fetch_json.return_value = {
+            "docs": [
+                {
+                    "title": "Книга со строковым издательством и ISBN",
+                    "publisher": "Единичное Издательство",
+                    "isbn": "9785041100575",
+                    "author_name": "Единичный Автор",
+                    "subject": "Единичный Предмет",
+                }
+            ]
+        }
+        result = search_open_library("Тест строки")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["publisher"], "Единичное Издательство")
+        self.assertEqual(result["isbn"], "9785041100575")
+        self.assertEqual(result["author"], "Единичный Автор")
+        self.assertEqual(result["genres"], ["Единичный Предмет"])
 
 
 class TestAddBook(unittest.TestCase):

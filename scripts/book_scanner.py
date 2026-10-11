@@ -58,15 +58,18 @@ def slugify(text: str) -> str:
     return final_slug if final_slug else "book"
 
 def fetch_json(url: str):
+    if not url or not isinstance(url, str) or not url.strip():
+        return None
+    clean_url = url.strip()
     headers = {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
-    req = urllib.request.Request(url, headers=headers)
     try:
+        req = urllib.request.Request(clean_url, headers=headers)
         with urllib.request.urlopen(req, timeout=10) as resp:
             return json.loads(resp.read().decode('utf-8'))
     except Exception as e:
-        print(f"[!] Ошибка запроса к {url}: {e}", file=sys.stderr)
+        print(f"[!] Ошибка запроса к {clean_url}: {e}", file=sys.stderr)
         return None
 
 def is_valid_image(data: bytes) -> bool:
@@ -92,26 +95,29 @@ def clean_description(desc: str) -> str:
     return desc
 
 def download_image(url: str, dest_path: Path) -> bool:
+    if not url or not isinstance(url, str) or not url.strip():
+        return False
+    clean_url = url.strip()
     headers = {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
-    req = urllib.request.Request(url, headers=headers)
     tmp_path = dest_path.with_name(f"{dest_path.name}.tmp")
     try:
+        req = urllib.request.Request(clean_url, headers=headers)
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = resp.read()
             if not data or len(data) == 0:
-                print(f"[!] Пустой ответ сервера при скачивании обложки {url}", file=sys.stderr)
+                print(f"[!] Пустой ответ сервера при скачивании обложки {clean_url}", file=sys.stderr)
                 return False
 
             stripped = data.lstrip()
             if stripped.startswith(b'<') or stripped.lower().startswith(b'<!doctype'):
-                print(f"[!] Ответ сервера содержит HTML вместо изображения: {url}", file=sys.stderr)
+                print(f"[!] Ответ сервера содержит HTML вместо изображения: {clean_url}", file=sys.stderr)
                 return False
 
             if not is_valid_image(data):
-                print(f"[!] Некорректный или неподдерживаемый формат изображения: {url}", file=sys.stderr)
+                print(f"[!] Некорректный или неподдерживаемый формат изображения: {clean_url}", file=sys.stderr)
                 return False
 
             with open(tmp_path, 'wb') as f:
@@ -122,7 +128,7 @@ def download_image(url: str, dest_path: Path) -> bool:
             return True
         return False
     except Exception as e:
-        print(f"[!] Не удалось скачать обложку {url}: {e}", file=sys.stderr)
+        print(f"[!] Не удалось скачать обложку {clean_url}: {e}", file=sys.stderr)
         return False
     finally:
         if tmp_path.exists():
@@ -156,38 +162,47 @@ def search_google_books(query: str, isbn: str = None):
 
     # Extract ISBN
     found_isbn = ""
-    for id_info in (info.get('industryIdentifiers') or []):
+    raw_identifiers = info.get('industryIdentifiers')
+    identifiers = raw_identifiers if isinstance(raw_identifiers, list) else []
+    for id_info in identifiers:
         if isinstance(id_info, dict) and id_info.get('type') in ['ISBN_13', 'ISBN_10']:
-            found_isbn = id_info.get('identifier', '')
+            found_isbn = str(id_info.get('identifier') or '')
             if id_info.get('type') == 'ISBN_13':
                 break
 
     # Extract cover URL
-    image_links = info.get('imageLinks') or {}
+    raw_images = info.get('imageLinks')
+    image_links = raw_images if isinstance(raw_images, dict) else {}
     cover_url = image_links.get('extraLarge') or image_links.get('large') or image_links.get('medium') or image_links.get('thumbnail') or image_links.get('smallThumbnail')
-    if cover_url:
+    if cover_url and isinstance(cover_url, str):
         cover_url = cover_url.replace('http://', 'https://')
         cover_url = re.sub(r'&edge=curl', '', cover_url)
         # Attempt to upgrade zoom if possible
         cover_url = re.sub(r'&zoom=\d', '&zoom=2', cover_url)
+    else:
+        cover_url = None
 
     published_date = str(info.get('publishedDate') or '')
     year_match = re.search(r'\d{4}', published_date)
     year = int(year_match.group(0)) if year_match else None
 
-    authors = info.get('authors') or []
+    raw_authors = info.get('authors')
+    authors = raw_authors if isinstance(raw_authors, list) else ([raw_authors] if raw_authors is not None else [])
     author_str = ", ".join(str(a).strip() for a in authors if a and str(a).strip()) or "Неизвестный автор"
 
+    raw_categories = info.get('categories')
+    categories = raw_categories if isinstance(raw_categories, list) else ([raw_categories] if raw_categories is not None else [])
+
     return {
-        'title': info.get('title', ''),
+        'title': str(info.get('title') or ''),
         'author': author_str,
         'year': year,
-        'publisher': info.get('publisher', ''),
+        'publisher': str(info.get('publisher') or ''),
         'isbn': found_isbn or (isbn or ''),
         'pages': info.get('pageCount') if isinstance(info.get('pageCount'), int) else None,
-        'genres': [str(c).strip() for c in (info.get('categories') or []) if c and str(c).strip()],
-        'language': info.get('language', 'ru'),
-        'description': info.get('description', ''),
+        'genres': [str(c).strip() for c in categories if c and str(c).strip()],
+        'language': info.get('language', 'ru') if isinstance(info.get('language'), str) else 'ru',
+        'description': str(info.get('description') or ''),
         'cover_url': cover_url,
     }
 
@@ -210,8 +225,8 @@ def search_open_library(query: str, isbn: str = None):
     cover_i = doc.get('cover_i')
     cover_url = f"https://covers.openlibrary.org/b/id/{cover_i}-L.jpg" if cover_i else None
 
-    raw_lang = (doc.get('language') or ['ru'])[0] if doc.get('language') else 'ru'
-    lang = 'ru' if raw_lang in ['rus', 'ru'] else raw_lang
+    raw_lang = (doc.get('language') or ['ru'])[0] if isinstance(doc.get('language'), list) and doc.get('language') else 'ru'
+    lang = 'ru' if raw_lang in ['rus', 'ru'] else str(raw_lang)
 
     raw_year = str(doc.get('first_publish_year') or '')
     year_match = re.search(r'\d{4}', raw_year)
@@ -220,14 +235,26 @@ def search_open_library(query: str, isbn: str = None):
     raw_pages = doc.get('number_of_pages_median')
     pages = int(raw_pages) if isinstance(raw_pages, int) or (isinstance(raw_pages, str) and raw_pages.isdigit()) else None
 
+    raw_pub = doc.get('publisher')
+    publisher = raw_pub[0] if isinstance(raw_pub, list) and raw_pub else (str(raw_pub) if isinstance(raw_pub, (str, int)) else '')
+
+    raw_isbn = doc.get('isbn')
+    found_isbn = raw_isbn[0] if isinstance(raw_isbn, list) and raw_isbn else (str(raw_isbn) if isinstance(raw_isbn, (str, int)) else '')
+
+    raw_authors = doc.get('author_name')
+    authors = raw_authors if isinstance(raw_authors, list) else ([raw_authors] if raw_authors is not None else [])
+
+    raw_subjects = doc.get('subject')
+    subjects = raw_subjects if isinstance(raw_subjects, list) else ([raw_subjects] if raw_subjects is not None else [])
+
     return {
-        'title': doc.get('title', ''),
-        'author': ", ".join(str(a).strip() for a in (doc.get('author_name') or []) if a and str(a).strip()) or "Неизвестный автор",
+        'title': str(doc.get('title') or ''),
+        'author': ", ".join(str(a).strip() for a in authors if a and str(a).strip()) or "Неизвестный автор",
         'year': year,
-        'publisher': (doc.get('publisher') or [''])[0] if doc.get('publisher') else '',
-        'isbn': (doc.get('isbn') or [''])[0] if doc.get('isbn') else '',
+        'publisher': str(publisher or ''),
+        'isbn': str(found_isbn or ''),
         'pages': pages,
-        'genres': [str(s).strip() for s in (doc.get('subject') or []) if s and str(s).strip()][:5],
+        'genres': [str(s).strip() for s in subjects if s and str(s).strip()][:5],
         'language': lang,
         'description': '',
         'cover_url': cover_url,
