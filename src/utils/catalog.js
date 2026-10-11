@@ -2,7 +2,7 @@
  * Normalizes text for case-insensitive and character-agnostic comparison:
  * lowercase, 'ё' -> 'е', and trimmed.
  *
- * @param {string} text
+ * @param {string | null | undefined} [text]
  * @returns {string}
  */
 export function normalize(text) {

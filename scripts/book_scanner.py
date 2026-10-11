@@ -143,10 +143,15 @@ def search_google_books(query: str, isbn: str = None):
         url = f"https://www.googleapis.com/books/v1/volumes?q={encoded_q}&maxResults=3"
         data = fetch_json(url)
 
-    if not data or not data.get('items'):
+    if not data or not isinstance(data, dict):
+        return None
+    items = data.get('items')
+    if not items or not isinstance(items, list):
         return None
 
-    item = data['items'][0]
+    item = items[0]
+    if not item or not isinstance(item, dict):
+        return None
     info = item.get('volumeInfo') or {}
 
     # Extract ISBN
@@ -170,8 +175,8 @@ def search_google_books(query: str, isbn: str = None):
     year_match = re.search(r'\d{4}', published_date)
     year = int(year_match.group(0)) if year_match else None
 
-    authors = info.get('authors', [])
-    author_str = ", ".join(str(a) for a in authors if a) or "Неизвестный автор"
+    authors = info.get('authors') or []
+    author_str = ", ".join(str(a).strip() for a in authors if a and str(a).strip()) or "Неизвестный автор"
 
     return {
         'title': info.get('title', ''),
@@ -179,8 +184,8 @@ def search_google_books(query: str, isbn: str = None):
         'year': year,
         'publisher': info.get('publisher', ''),
         'isbn': found_isbn or (isbn or ''),
-        'pages': info.get('pageCount'),
-        'genres': info.get('categories', []),
+        'pages': info.get('pageCount') if isinstance(info.get('pageCount'), int) else None,
+        'genres': [str(c).strip() for c in (info.get('categories') or []) if c and str(c).strip()],
         'language': info.get('language', 'ru'),
         'description': info.get('description', ''),
         'cover_url': cover_url,
@@ -193,10 +198,13 @@ def search_open_library(query: str, isbn: str = None):
     url = f"https://openlibrary.org/search.json?q={encoded_q}&limit=3"
     data = fetch_json(url)
 
-    if not data or not data.get('docs'):
+    if not data or not isinstance(data, dict):
+        return None
+    docs = data.get('docs')
+    if not docs or not isinstance(docs, list):
         return None
 
-    doc = data['docs'][0]
+    doc = docs[0]
     if not doc or not isinstance(doc, dict):
         return None
     cover_i = doc.get('cover_i')
@@ -205,14 +213,21 @@ def search_open_library(query: str, isbn: str = None):
     raw_lang = (doc.get('language') or ['ru'])[0] if doc.get('language') else 'ru'
     lang = 'ru' if raw_lang in ['rus', 'ru'] else raw_lang
 
+    raw_year = str(doc.get('first_publish_year') or '')
+    year_match = re.search(r'\d{4}', raw_year)
+    year = int(year_match.group(0)) if year_match else None
+
+    raw_pages = doc.get('number_of_pages_median')
+    pages = int(raw_pages) if isinstance(raw_pages, int) or (isinstance(raw_pages, str) and raw_pages.isdigit()) else None
+
     return {
         'title': doc.get('title', ''),
-        'author': ", ".join(str(a) for a in (doc.get('author_name') or []) if a) or "Неизвестный автор",
-        'year': doc.get('first_publish_year'),
+        'author': ", ".join(str(a).strip() for a in (doc.get('author_name') or []) if a and str(a).strip()) or "Неизвестный автор",
+        'year': year,
         'publisher': (doc.get('publisher') or [''])[0] if doc.get('publisher') else '',
         'isbn': (doc.get('isbn') or [''])[0] if doc.get('isbn') else '',
-        'pages': doc.get('number_of_pages_median'),
-        'genres': (doc.get('subject') or [])[:5],
+        'pages': pages,
+        'genres': [str(s).strip() for s in (doc.get('subject') or []) if s and str(s).strip()][:5],
         'language': lang,
         'description': '',
         'cover_url': cover_url,
@@ -305,12 +320,15 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
     # Generate Markdown file
     BOOKS_DIR.mkdir(parents=True, exist_ok=True)
     md_file = BOOKS_DIR / f"{slug}.md"
-    year_str = f"year: {book_info['year']}\n" if book_info.get('year') else ""
+    year_val = book_info.get('year')
+    year_str = f"year: {int(year_val)}\n" if isinstance(year_val, (int, str)) and str(year_val).isdigit() else ""
     pub_str = f'publisher: {json.dumps(book_info["publisher"], ensure_ascii=False)}\n' if book_info.get('publisher') else ""
     isbn_str = f'isbn: {json.dumps(book_info["isbn"], ensure_ascii=False)}\n' if book_info.get('isbn') else ""
-    pages_str = f"pages: {book_info['pages']}\n" if book_info.get('pages') else ""
+    pages_val = book_info.get('pages')
+    pages_str = f"pages: {int(pages_val)}\n" if isinstance(pages_val, (int, str)) and str(pages_val).isdigit() else ""
     rating_str = f"rating: {rating}\n" if rating else ""
-    genres_list = book_info.get('genres', [])
+    genres_raw = book_info.get('genres') or []
+    genres_list = [str(g).strip() for g in genres_raw if g and str(g).strip()]
     genres_yaml = "genres:\n" + "".join([f'  - {json.dumps(g, ensure_ascii=False)}\n' for g in genres_list]) if genres_list else "genres: []\n"
 
     desc = (book_info.get('description') or '').strip()

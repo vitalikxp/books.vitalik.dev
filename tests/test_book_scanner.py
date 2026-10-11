@@ -591,6 +591,36 @@ class TestSearchGoogleBooks(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(result["isbn"], "5041100575")
 
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_google_books_handles_null_authors_and_categories(self, mock_fetch_json):
+        mock_fetch_json.return_value = {
+            "items": [
+                {
+                    "volumeInfo": {
+                        "title": "Книга без авторов и категорий",
+                        "authors": None,
+                        "categories": None,
+                    }
+                }
+            ]
+        }
+        result = search_google_books("Книга без авторов и категорий")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["author"], "Неизвестный автор")
+        self.assertEqual(result["genres"], [])
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_google_books_handles_null_item_in_items(self, mock_fetch_json):
+        mock_fetch_json.return_value = {"items": [None]}
+        result = search_google_books("Книга с битым элементом")
+        self.assertIsNone(result)
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_google_books_handles_non_list_items(self, mock_fetch_json):
+        mock_fetch_json.return_value = {"items": "not a list"}
+        result = search_google_books("Некорректный ответ")
+        self.assertIsNone(result)
+
 
 class TestSearchOpenLibrary(unittest.TestCase):
     """Tests for search_open_library function."""
@@ -741,6 +771,24 @@ class TestSearchOpenLibrary(unittest.TestCase):
         result = search_open_library("Книга без обложки")
         self.assertIsNotNone(result)
         self.assertIsNone(result["cover_url"])
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_open_library_handles_string_year_and_pages(self, mock_fetch_json):
+        mock_fetch_json.return_value = {
+            "docs": [
+                {
+                    "title": "Книга со строковым годом",
+                    "first_publish_year": "c. 1920",
+                    "number_of_pages_median": "350",
+                    "subject": [None, "", "Классика", 123],
+                }
+            ]
+        }
+        result = search_open_library("Книга со строковым годом")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["year"], 1920)
+        self.assertEqual(result["pages"], 350)
+        self.assertEqual(result["genres"], ["Классика", "123"])
 
 
 class TestAddBook(unittest.TestCase):
@@ -1331,6 +1379,27 @@ class TestAddBook(unittest.TestCase):
             "https://example.com/custom-cover.jpg",
             self.covers_dir / "yavnyy-avtor-yavnoe-nazvanie.jpg",
         )
+
+    def test_add_book_handles_invalid_year_pages_and_dirty_genres(self):
+        success = add_book(
+            title="Книга с невалидными типами",
+            author="Автор",
+            year="неизвестен",
+            pages="много",
+            genres=["  ", None, "Фантастика", ""],
+            custom_cover="/covers/default-book.svg",
+        )
+        self.assertTrue(success)
+        expected_md = self.books_dir / "avtor-kniga-s-nevalidnymi-tipami.md"
+        self.assertTrue(expected_md.exists())
+
+        raw = expected_md.read_text(encoding="utf-8")
+        parts = raw.split("---")
+        fm = yaml.safe_load(parts[1])
+
+        self.assertNotIn("year", fm)
+        self.assertNotIn("pages", fm)
+        self.assertEqual(fm["genres"], ["Фантастика"])
 
 
 class TestCLI(unittest.TestCase):

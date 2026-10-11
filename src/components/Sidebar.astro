@@ -1,6 +1,7 @@
 ---
 import { BookOpen, Tag, Library, X, SunMoon } from '@lucide/astro';
 import TagIcon from './TagIcon.astro';
+import { normalize } from '../utils/catalog.js';
 
 interface Props {
   totalBooks?: number;
@@ -14,7 +15,7 @@ const {
   isMobileDrawer = false,
 } = Astro.props;
 const isHome = Astro.url.pathname === '/';
-const currentGenre = Astro.url.searchParams.get('genre')?.toLowerCase().trim() || '';
+const currentGenre = normalize(Astro.url.searchParams.get('genre') || '');
 const isAllBooksSelected = isHome && !currentGenre;
 ---
 
@@ -85,7 +86,7 @@ const isAllBooksSelected = isHome && !currentGenre;
 
         <!-- Specific Tag Items -->
         {genres.map((g) => {
-          const isGenreActive = isHome && currentGenre === g.name.toLowerCase();
+          const isGenreActive = isHome && currentGenre === normalize(g.name);
           return (
             <li>
               <a
