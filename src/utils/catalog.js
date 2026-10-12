@@ -17,7 +17,7 @@ export function normalize(text) {
  */
 export function cleanIsbn(isbn) {
   return normalize(isbn)
-    .replace(/^isbn(?:[-\s]?1[03])?[:\s]*/i, '')
+    .replace(/^isbn(?:[:\s\u2010-\u2015\u2212-]*1[03])?[:\s\u2010-\u2015\u2212-]*/i, '')
     .replace(/[-\s\u2010-\u2015\u2212]/g, '');
 }
 
@@ -39,7 +39,7 @@ export function matchesSearch(book, searchQuery) {
   const author = normalize(book.author ?? '');
   const cleanIsbnValue = cleanIsbn(book.isbn);
   const cleanQuery = cleanIsbn(normalizedQuery);
-  const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
+  const queryWords = normalizedQuery.split(/[\s,;:.!?«»"()[\]{}]+/).filter(Boolean);
 
   const matchesAllWords = queryWords.length > 0 && queryWords.every(
     (word) => title.includes(word) || author.includes(word)
@@ -119,8 +119,8 @@ export function compareBooks(a, b, sortMode = 'recent') {
   a = a || {};
   b = b || {};
 
-  const titleA = String(a.title ?? '');
-  const titleB = String(b.title ?? '');
+  const titleA = String(a.title ?? '').trim();
+  const titleB = String(b.title ?? '').trim();
   const authorA = String(a.author ?? '').trim();
   const authorB = String(b.author ?? '').trim();
   const idA = String(a.id ?? '');

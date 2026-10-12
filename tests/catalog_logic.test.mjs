@@ -119,6 +119,21 @@ test('2. Мультисловный поиск по названию и авто
     assert.equal(matchesSearch(bookUndefTitle, 'толстой'), true);
     assert.equal(matchesSearch(bookUndefTitle, 'чехов'), false);
   });
+
+  await t.test('корректно обрабатывает пунктуацию в поисковых запросах (Толстой, Лев, «Дизайн», 1984!)', () => {
+    const bookTolstoy = { title: 'Война и мир', author: 'Лев Толстой' };
+    const bookDesign = { title: 'Дизайн привычных вещей', author: 'Дон Норман' };
+    const book1984 = { title: '1984', author: 'Джордж Оруэлл' };
+
+    assert.equal(matchesSearch(bookTolstoy, 'Толстой, Лев'), true);
+    assert.equal(matchesSearch(bookTolstoy, 'Толстой, Лев!'), true);
+    assert.equal(matchesSearch(bookTolstoy, 'Толстой; Лев'), true);
+    assert.equal(matchesSearch(bookDesign, '«Дизайн»'), true);
+    assert.equal(matchesSearch(bookDesign, '«Дизайн» (Норман)'), true);
+    assert.equal(matchesSearch(book1984, '1984!'), true);
+    assert.equal(matchesSearch(book1984, '[1984]'), true);
+    assert.equal(matchesSearch(book1984, '«1984»?!'), true);
+  });
 });
 
 test('3. Поиск по ISBN (очистка дефисов и пробелов)', async (t) => {
@@ -302,6 +317,19 @@ test('3. Поиск по ISBN (очистка дефисов и пробелов
     assert.equal(cleanIsbn(''), '');
     assert.equal(cleanIsbn(null), '');
     assert.equal(cleanIsbn(undefined), '');
+  });
+
+  await t.test('cleanIsbn очищает префиксы с пробелами, двоеточиями и различными видами дефисов/тире/минусов', () => {
+    assert.equal(cleanIsbn('ISBN - 13: 978-5-04-110057-5'), '9785041100575');
+    assert.equal(cleanIsbn('ISBN: 13: 978-5-04-110057-5'), '9785041100575');
+    assert.equal(cleanIsbn('ISBN–13: 978-5-04-110057-5'), '9785041100575');
+    assert.equal(cleanIsbn('ISBN—13: 978-5-04-110057-5'), '9785041100575');
+    assert.equal(cleanIsbn('ISBN−13: 978-5-04-110057-5'), '9785041100575');
+    assert.equal(cleanIsbn('ISBN - 10: 5-04-110057-5'), '5041100575');
+    assert.equal(cleanIsbn('ISBN: 10: 5-04-110057-5'), '5041100575');
+    assert.equal(cleanIsbn('ISBN–10: 5-04-110057-5'), '5041100575');
+    assert.equal(cleanIsbn('ISBN—10: 5-04-110057-5'), '5041100575');
+    assert.equal(cleanIsbn('ISBN−10: 5-04-110057-5'), '5041100575');
   });
 });
 
@@ -652,6 +680,27 @@ test('5. Компараторы сортировки (compareBooks)', async (t) 
     const bookUndefA = { id: 'id-a', title: 'То же название', author: undefined };
     const sortedUndef = [bookUndefZ, bookUndefA].sort((a, b) => compareBooks(a, b, 'author'));
     assert.deepEqual(sortedUndef.map((b) => b.id), ['id-a', 'id-z']);
+  });
+
+  await t.test('корректно сравнивает книги с нетримированными названиями (leading/trailing whitespace)', () => {
+    const bookUntrimmedA = { id: 'b-a', title: '   Азбука   ', author: 'Автор' };
+    const bookTrimmedB = { id: 'b-b', title: 'Басни', author: 'Автор' };
+    const bookUntrimmedC = { id: 'b-c', title: '  Басни  ', author: 'Автор' };
+
+    // В режиме 'title': 'Азбука' предшествует 'Басни'
+    assert.ok(compareBooks(bookUntrimmedA, bookTrimmedB, 'title') < 0);
+    assert.ok(compareBooks(bookTrimmedB, bookUntrimmedA, 'title') > 0);
+
+    // При одинаковых названиях после trim: тай-брейк по id
+    assert.equal(compareBooks(bookTrimmedB, bookUntrimmedC, 'title'), 'b-b'.localeCompare('b-c'));
+
+    // В режиме 'author' при одинаковом авторе тай-брейк идет по title
+    assert.ok(compareBooks(bookUntrimmedA, bookTrimmedB, 'author') < 0);
+
+    // В режиме 'recent' при одинаковых added и year тай-брейк идет по title
+    const bookRecentA = { id: '1', title: '   Азбука   ', added: 100, year: 2020 };
+    const bookRecentB = { id: '2', title: 'Басни', added: 100, year: 2020 };
+    assert.ok(compareBooks(bookRecentA, bookRecentB, 'recent') < 0);
   });
 });
 

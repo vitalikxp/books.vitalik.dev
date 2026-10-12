@@ -287,17 +287,18 @@ const genres = Array.from(genreMap.values())
         const themeRadioGroups = document.querySelectorAll('.theme-radiogroup');
 
         function applyThemePreference(pref: string) {
+          const validPref = (['system', 'light', 'dark'].includes(pref) ? pref : 'system');
           try {
-            localStorage.setItem('my-library.theme', pref);
+            localStorage.setItem('my-library.theme', validPref);
           } catch {}
-          document.documentElement.dataset.themePreference = pref;
+          document.documentElement.dataset.themePreference = validPref;
 
           const mq = window.matchMedia('(prefers-color-scheme: dark)');
-          const resolved = pref === 'system' ? (mq.matches ? 'dark' : 'light') : pref;
+          const resolved = validPref === 'system' ? (mq.matches ? 'dark' : 'light') : validPref;
           document.documentElement.dataset.theme = resolved;
 
           themeBtns.forEach((btn) => {
-            const isCurrent = btn.dataset.themeVal === pref;
+            const isCurrent = btn.dataset.themeVal === validPref;
             if (isCurrent) {
               btn.setAttribute('aria-checked', 'true');
               btn.setAttribute('tabindex', '0');
@@ -365,13 +366,11 @@ const genres = Array.from(genreMap.values())
         }
         pageShowListener = (e: PageTransitionEvent) => {
           if (e.persisted) {
+            let saved: string | null = null;
             try {
-              const saved = localStorage.getItem('my-library.theme');
-              const currentPref = document.documentElement.dataset.themePreference;
-              if (saved && saved !== currentPref) {
-                applyThemePreference(saved);
-              }
+              saved = localStorage.getItem('my-library.theme');
             } catch {}
+            applyThemePreference(saved || 'system');
           }
         };
         window.addEventListener('pageshow', pageShowListener);
