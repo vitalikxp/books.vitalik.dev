@@ -44,7 +44,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install Python dependencies
-        run: pip install pyyaml
+        run: pip install pyyaml pillow
 
       - name: Check types
         run: pnpm check
