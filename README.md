@@ -46,5 +46,6 @@ pnpm preview
 - `processed_photos/` — архив обработанных фото.
 - `src/content/books/` — база данных книг в формате Markdown (`.md` с YAML Frontmatter).
 - `public/covers/` — качественные обложки книг.
+- `COVERS_TODO.md` — реестр книг, требующих поиска более качественных цифровых обложек.
 - `scripts/book_scanner.py` — утилита для поиска метаданных и скачивания обложек.
 - `.github/workflows/deploy.yml` — автоматический деплой на GitHub Pages при `git push`.

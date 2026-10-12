@@ -137,7 +137,8 @@ def download_image(url: str, dest_path: Path) -> bool:
         return False
 
     headers = {
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': f"{parsed.scheme}://{parsed.netloc}/"
     }
     tmp_path = dest_path.with_name(f"{dest_path.name}.{os.getpid()}.tmp")
     try:
@@ -158,8 +159,20 @@ def download_image(url: str, dest_path: Path) -> bool:
                 print(f"[!] Некорректный или неподдерживаемый формат изображения: {clean_url}", file=sys.stderr)
                 return False
 
-            with open(tmp_path, 'wb') as f:
-                f.write(data)
+            # Convert to standard RGB JPEG if saving as .jpg/.jpeg to ensure clean JPEG format
+            if dest_path.suffix.lower() in ('.jpg', '.jpeg'):
+                try:
+                    import io
+                    from PIL import Image
+                    im = Image.open(io.BytesIO(data))
+                    rgb_im = im.convert('RGB')
+                    rgb_im.save(tmp_path, 'JPEG', quality=92)
+                except Exception:
+                    with open(tmp_path, 'wb') as f:
+                        f.write(data)
+            else:
+                with open(tmp_path, 'wb') as f:
+                    f.write(data)
 
         if tmp_path.exists() and tmp_path.stat().st_size > 0:
             tmp_path.replace(dest_path)
@@ -334,7 +347,7 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
     )
 
     # If title and author are not fully given or search requested, try online APIs
-    should_search = bool(query or isbn or not (has_explicit_title_author and custom_cover and year))
+    should_search = bool(query or not (has_explicit_title_author and custom_cover and year))
     if should_search:
         if not search_q and not isbn:
             print("[!] Укажите название, автора или ISBN для поиска.")

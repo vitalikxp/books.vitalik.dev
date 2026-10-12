@@ -1,13 +1,26 @@
 ---
 import { 
-  Code,          // Программирование
-  Terminal,      // Python
+  Code,          // Программирование, Go, C#, Lua, etc.
+  Terminal,      // Python, CLI
   Binary,        // Computer Science
-  Workflow,      // Алгоритмы
-  Palette,       // Дизайн
+  Workflow,      // Алгоритмы, Структуры данных
+  Palette,       // Дизайн, Искусство
   Briefcase,     // Карьера в IT
-  Brush,         // Оформление
+  Brush,         // Оформление, Рисование
   Type,          // Типографика
+  Database,      // Базы данных, SQL, MySQL
+  Layers,        // Архитектура, DDD, ООП
+  Gamepad2,      // Геймдев, Геймдизайн, Unity, Unreal Engine, Level Design, Видеоигры
+  BookOpen,      // Комиксы, Манга, Артбуки, Литература
+  Dices,         // Настольные ролевые игры, D&D, Pathfinder, GURPS
+  Brain,         // Искусственный интеллект, Машинное обучение, LLM
+  Globe,         // Веб-разработка, JavaScript, TypeScript, React, Vue, PHP
+  Server,        // DevOps, Linux, Docker, Kubernetes, Podman, Бэкенд
+  Box,           // 3D-графика, Blender, Анимация
+  Smartphone,    // Мобильная разработка, Flutter, Dart, Android
+  Film,          // Сценарное мастерство, Кино
+  Sparkles,      // Фантастика
+  Utensils,      // Кулинария
   Tag            // По умолчанию
 } from '@lucide/astro';
 
@@ -25,6 +38,11 @@ let IconComponent = Tag;
 
 switch (normalized) {
   case 'программирование':
+  case 'go':
+  case 'c#':
+  case 'lua':
+  case 'dart':
+  case 'чистый код':
     IconComponent = Code;
     break;
   case 'python':
@@ -34,19 +52,122 @@ switch (normalized) {
     IconComponent = Binary;
     break;
   case 'алгоритмы':
+  case 'структуры данных':
     IconComponent = Workflow;
     break;
   case 'дизайн':
+  case 'искусство':
     IconComponent = Palette;
     break;
   case 'карьера в it':
+  case 'собеседования':
     IconComponent = Briefcase;
     break;
   case 'оформление':
+  case 'рисование':
+  case 'анатомия':
     IconComponent = Brush;
     break;
   case 'типографика':
     IconComponent = Type;
+    break;
+  case 'базы данных':
+  case 'sql':
+  case 'mysql':
+    IconComponent = Database;
+    break;
+  case 'архитектура':
+  case 'ddd':
+  case 'ооп':
+  case 'микросервисы':
+  case 'solid':
+  case 'паттерны проектирования':
+    IconComponent = Layers;
+    break;
+  case 'геймдев':
+  case 'геймдизайн':
+  case 'игры':
+  case 'видеоигры':
+  case 'инди':
+  case 'unity':
+  case 'unreal engine':
+  case 'blueprints':
+  case 'level design':
+    IconComponent = Gamepad2;
+    break;
+  case 'комиксы':
+  case 'манга':
+  case 'артбуки':
+  case 'литература':
+  case 'нон-фикшн':
+  case 'популярная наука':
+  case 'история игр':
+  case 'журналы':
+    IconComponent = BookOpen;
+    break;
+  case 'настольные ролевые игры':
+  case 'dungeons & dragons':
+  case 'pathfinder':
+  case 'gurps':
+  case 'мутанты':
+  case 'книги правил':
+  case 'бестиарий':
+  case 'приключения':
+    IconComponent = Dices;
+    break;
+  case 'искусственный интеллект':
+  case 'машинное обучение':
+  case 'llm':
+  case 'ии-агенты':
+    IconComponent = Brain;
+    break;
+  case 'веб-разработка':
+  case 'javascript':
+  case 'typescript':
+  case 'react':
+  case 'vue':
+  case 'php':
+    IconComponent = Globe;
+    break;
+  case 'devops':
+  case 'linux':
+  case 'контейнеризация':
+  case 'docker':
+  case 'kubernetes':
+  case 'podman':
+  case 'бэкенд':
+  case 'облачные технологии':
+  case 'информационная безопасность':
+    IconComponent = Server;
+    break;
+  case '3d-графика':
+  case 'blender':
+  case 'анимация':
+  case 'spine 2d':
+  case 'пиксель-арт':
+  case 'vfx':
+    IconComponent = Box;
+    break;
+  case 'мобильная разработка':
+  case 'flutter':
+  case 'android':
+  case 'kotlin':
+    IconComponent = Smartphone;
+    break;
+  case 'сценарное мастерство':
+  case 'кино':
+  case 'писательское мастерство':
+    IconComponent = Film;
+    break;
+  case 'фантастика':
+  case 'фэнтези':
+  case 'постапокалипсис':
+  case 'хоррор':
+  case 'зомби':
+    IconComponent = Sparkles;
+    break;
+  case 'кулинария':
+    IconComponent = Utensils;
     break;
   default:
     IconComponent = Tag;
