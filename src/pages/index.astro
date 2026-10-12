@@ -61,7 +61,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         <button
           type="button"
           id="search-clear-btn"
-          class="hidden absolute inset-y-0 right-0 w-12 flex items-center justify-center text-[var(--color-placeholder)] hover:text-[var(--color-text)] cursor-pointer"
+          class="hidden absolute inset-y-0 right-0 w-12 flex items-center justify-center text-[var(--color-placeholder)] hover:text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)] rounded-r-[var(--radius-control)] cursor-pointer"
           aria-label="Очистить поиск"
         >
           <X class="w-5 h-5 stroke-[1.8]" />
@@ -418,6 +418,20 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         if (e.isComposing) return;
         flushPendingSearch();
         applyFilterAndSort();
+      } else if (e.key === 'Escape') {
+        if (searchInput.value) {
+          e.preventDefault();
+          if (searchDebounceTimer) {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = undefined;
+          }
+          searchInput.value = '';
+          searchQuery = '';
+          searchClearBtn?.classList.add('hidden');
+          applyFilterAndSort();
+        } else {
+          searchInput.blur();
+        }
       }
     });
 
@@ -510,7 +524,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
       }
       const newSearch = url.search || '';
       if (window.location.search !== newSearch) {
-        window.history.pushState({}, '', url.pathname + newSearch);
+        window.history.pushState({}, '', url.pathname + newSearch + url.hash);
       }
     }
 

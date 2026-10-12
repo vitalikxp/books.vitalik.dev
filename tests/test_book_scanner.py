@@ -141,6 +141,12 @@ class TestCleanDescription(unittest.TestCase):
         raw_blocks = "<blockquote>Цитата</blockquote><table><tr><td>Ячейка 1</td><td>Ячейка 2</td></tr></table><dl><dt>Термин</dt><dd>Определение</dd></dl>"
         self.assertEqual(clean_description(raw_blocks), "Цитата\n\nЯчейка 1\n\nЯчейка 2\n\nТермин\n\nОпределение")
 
+    def test_clean_description_sanitizes_frontmatter_delimiter_lines(self):
+        raw = "Первая часть описания\n---\nВторая часть\n--- \nТретья"
+        cleaned = clean_description(raw)
+        self.assertNotIn("\n---\n", cleaned)
+        self.assertEqual(cleaned, "Первая часть описания\n\n—\n\nВторая часть\n\n—\n\nТретья")
+
 
 class TestImageValidation(unittest.TestCase):
     """Tests for is_valid_image magic numbers and HTML rejection."""
@@ -902,6 +908,38 @@ class TestSearchOpenLibrary(unittest.TestCase):
         self.assertEqual(result["isbn"], "9785041100575")
         self.assertEqual(result["author"], "Единичный Автор")
         self.assertEqual(result["genres"], ["Единичный Предмет"])
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_open_library_negative_cover_i_returns_none_cover_url(self, mock_fetch_json):
+        mock_fetch_json.return_value = {
+            "docs": [
+                {
+                    "title": "Книга с -1 cover_i",
+                    "cover_i": -1,
+                }
+            ]
+        }
+        result = search_open_library("Книга с -1")
+        self.assertIsNotNone(result)
+        self.assertIsNone(result["cover_url"])
+
+    @patch("scripts.book_scanner.fetch_json")
+    def test_search_open_library_preserves_passed_isbn_when_doc_isbn_missing(self, mock_fetch_json):
+        mock_fetch_json.return_value = {
+            "docs": [
+                {
+                    "title": "Книга без isbn в ответе",
+                    "author_name": ["Автор"],
+                }
+            ]
+        }
+        result = search_open_library("Книга", isbn="978-5-04-110057-5")
+        self.assertIsNotNone(result)
+        self.assertEqual(result["isbn"], "978-5-04-110057-5")
+
+    def test_search_open_library_empty_query_and_isbn_returns_none(self):
+        self.assertIsNone(search_open_library("", isbn=""))
+        self.assertIsNone(search_open_library("   ", isbn=None))
 
 
 class TestAddBook(unittest.TestCase):
@@ -1675,6 +1713,46 @@ class TestAddBook(unittest.TestCase):
         self.assertNotIn("year", fm)
         self.assertNotIn("pages", fm)
         self.assertEqual(fm["genres"], ["Фантастика"])
+
+    def test_add_book_sanitizes_status_and_rating(self):
+        # Invalid status should normalize to 'read', and underscore 'to_read' to 'to-read'
+        add_book(
+            title="Книга с невалидным статусом",
+            author="Автор",
+            status="unsupported_status",
+            rating=10,  # Invalid rating > 5 should be ignored
+            custom_cover="/covers/default-book.svg",
+        )
+        md1 = self.books_dir / "avtor-kniga-s-nevalidnym-statusom.md"
+        self.assertTrue(md1.exists())
+        fm1 = yaml.safe_load(md1.read_text(encoding="utf-8").split("---")[1])
+        self.assertEqual(fm1["status"], "read")
+        self.assertNotIn("rating", fm1)
+
+        add_book(
+            title="Книга с подчеркиванием в статусе",
+            author="Автор",
+            status="to_read",
+            rating=4,
+            custom_cover="/covers/default-book.svg",
+        )
+        md2 = self.books_dir / "avtor-kniga-s-podcherkivaniem-v-statuse.md"
+        self.assertTrue(md2.exists())
+        fm2 = yaml.safe_load(md2.read_text(encoding="utf-8").split("---")[1])
+        self.assertEqual(fm2["status"], "to-read")
+        self.assertEqual(fm2["rating"], 4)
+
+    def test_add_book_deduplicates_genres(self):
+        add_book(
+            title="Книга с дубликатами жанров",
+            author="Автор",
+            genres=["Дизайн", "дизайн", "Типографика", "ТИПОГРАФИКА", "Дизайн"],
+            custom_cover="/covers/default-book.svg",
+        )
+        md = self.books_dir / "avtor-kniga-s-dublikatami-zhanrov.md"
+        self.assertTrue(md.exists())
+        fm = yaml.safe_load(md.read_text(encoding="utf-8").split("---")[1])
+        self.assertEqual(fm["genres"], ["Дизайн", "Типографика"])
 
 
 class TestCLI(unittest.TestCase):

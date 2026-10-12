@@ -19,7 +19,7 @@ interface Props {
 
 const { tag, class: className = "w-3.5 h-3.5 stroke-[1.8]", size = 14 } = Astro.props;
 
-const normalized = (tag || '').toLowerCase().trim();
+const normalized = (tag || '').toLowerCase().replace(/ё/g, 'е').trim();
 
 let IconComponent = Tag;
 

@@ -34,7 +34,7 @@ if (data.status === 'reading') {
 }
 ---
 
-<Layout title={`${data.title} — ${data.author}`}>
+<Layout title={`${data.title}${data.author ? ` — ${data.author}` : ''}`}>
   <div class="max-w-[1200px] mx-auto px-5 sm:px-8 lg:px-10 pt-6 sm:pt-8 lg:pt-10 pb-16">
     <!-- Back to catalog button -->
     <div class="mb-8">

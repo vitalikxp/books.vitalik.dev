@@ -82,7 +82,7 @@ def fetch_json(url: str):
         req = urllib.request.Request(clean_url, headers=headers)
         with urllib.request.urlopen(req, timeout=10) as resp:
             LAST_HTTP_STATUS = getattr(resp, 'status', 200)
-            return json.loads(resp.read().decode('utf-8'))
+            return json.loads(resp.read().decode('utf-8', errors='replace'))
     except urllib.error.HTTPError as e:
         LAST_HTTP_STATUS = e.code
         if e.code == 429:
@@ -119,6 +119,7 @@ def clean_description(desc: str) -> str:
         return ""
     desc = re.sub(r'<(?:br\s*/?|/p|/div|/li|/h[1-6]|/blockquote|/tr|/td|/dd|/dt)>', '\n\n', desc, flags=re.IGNORECASE)
     desc = html.unescape(re.sub(r'<[^>]+>', '', desc)).strip()
+    desc = re.sub(r'(?m)^---+\s*$', '\n—\n', desc)
     desc = re.sub(r'\n{3,}', '\n\n', desc)
     return desc
 
@@ -138,7 +139,7 @@ def download_image(url: str, dest_path: Path) -> bool:
     headers = {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
-    tmp_path = dest_path.with_name(f"{dest_path.name}.tmp")
+    tmp_path = dest_path.with_name(f"{dest_path.name}.{os.getpid()}.tmp")
     try:
         req = urllib.request.Request(clean_url, headers=headers)
         dest_path.parent.mkdir(parents=True, exist_ok=True)
@@ -176,7 +177,9 @@ def download_image(url: str, dest_path: Path) -> bool:
 
 def search_google_books(query: str, isbn: str = None):
     clean_isbn = re.sub(r'(?i)^isbn(?:[-\s]?1[03])?[:\s]*|[-\s\u2010-\u2015\u2212]', '', isbn or '')
-    q = f"isbn:{clean_isbn}" if clean_isbn else query
+    q = f"isbn:{clean_isbn}" if clean_isbn else (query or '').strip()
+    if not q:
+        return None
     encoded_q = urllib.parse.quote(q)
     url = f"https://www.googleapis.com/books/v1/volumes?q={encoded_q}&maxResults=3&langRestrict=ru"
     data = fetch_json(url)
@@ -238,6 +241,8 @@ def search_google_books(query: str, isbn: str = None):
 
     raw_categories = info.get('categories')
     categories = raw_categories if isinstance(raw_categories, list) else ([raw_categories] if raw_categories is not None else [])
+    raw_lang = info.get('language')
+    lang = raw_lang.strip() if isinstance(raw_lang, str) and raw_lang.strip() else 'ru'
 
     return {
         'title': str(info.get('title') or ''),
@@ -247,7 +252,7 @@ def search_google_books(query: str, isbn: str = None):
         'isbn': found_isbn or (isbn or ''),
         'pages': info.get('pageCount') if isinstance(info.get('pageCount'), int) else None,
         'genres': [str(c).strip() for c in categories if c and str(c).strip()],
-        'language': info.get('language', 'ru') if isinstance(info.get('language'), str) else 'ru',
+        'language': lang,
         'description': str(info.get('description') or ''),
         'cover_url': cover_url,
         'fallback_cover_url': fallback_cover_url,
@@ -255,7 +260,9 @@ def search_google_books(query: str, isbn: str = None):
 
 def search_open_library(query: str, isbn: str = None):
     clean_isbn = re.sub(r'(?i)^isbn(?:[-\s]?1[03])?[:\s]*|[-\s\u2010-\u2015\u2212]', '', isbn or '')
-    q = clean_isbn if clean_isbn else query
+    q = clean_isbn if clean_isbn else (query or '').strip()
+    if not q:
+        return None
     encoded_q = urllib.parse.quote(q)
     url = f"https://openlibrary.org/search.json?q={encoded_q}&limit=3"
     data = fetch_json(url)
@@ -270,10 +277,10 @@ def search_open_library(query: str, isbn: str = None):
     if not doc or not isinstance(doc, dict):
         return None
     cover_i = doc.get('cover_i')
-    cover_url = f"https://covers.openlibrary.org/b/id/{cover_i}-L.jpg" if cover_i else None
+    cover_url = f"https://covers.openlibrary.org/b/id/{cover_i}-L.jpg" if cover_i and isinstance(cover_i, (int, str)) and str(cover_i).isdigit() and int(cover_i) > 0 else None
 
-    raw_lang = (doc.get('language') or ['ru'])[0] if isinstance(doc.get('language'), list) and doc.get('language') else 'ru'
-    lang = 'ru' if raw_lang in ['rus', 'ru'] else str(raw_lang)
+    raw_lang = (doc.get('language') or ['ru'])[0] if isinstance(doc.get('language'), list) and doc.get('language') else (doc.get('language') or 'ru')
+    lang = 'ru' if raw_lang in ['rus', 'ru'] else (str(raw_lang).strip() if str(raw_lang).strip() else 'ru')
 
     raw_year = str(doc.get('first_publish_year') or '')
     year_match = re.search(r'\d{4}', raw_year)
@@ -299,7 +306,7 @@ def search_open_library(query: str, isbn: str = None):
         'author': ", ".join(str(a).strip() for a in authors if a and str(a).strip()) or "Неизвестный автор",
         'year': year,
         'publisher': str(publisher or ''),
-        'isbn': str(found_isbn or ''),
+        'isbn': str(found_isbn or (isbn or '')),
         'pages': pages,
         'genres': [str(s).strip() for s in subjects if s and str(s).strip()][:5],
         'language': lang,
@@ -445,13 +452,27 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
     pub_str = f'publisher: {json.dumps(book_info["publisher"], ensure_ascii=False)}\n' if book_info.get('publisher') else ""
     isbn_str = f'isbn: {json.dumps(book_info["isbn"], ensure_ascii=False)}\n' if book_info.get('isbn') else ""
     pages_val = book_info.get('pages')
-    pages_str = f"pages: {int(pages_val)}\n" if isinstance(pages_val, (int, str)) and str(pages_val).isdigit() else ""
+    pages_str = f"pages: {int(pages_val)}\n" if isinstance(pages_val, (int, str)) and str(pages_val).isdigit() and int(pages_val) > 0 else ""
     room_str = f'room: {json.dumps(str(room).strip(), ensure_ascii=False)}\n' if room and str(room).strip() else ""
     shelf_str = f'shelf: {json.dumps(str(shelf).strip(), ensure_ascii=False)}\n' if shelf and str(shelf).strip() else ""
     loan_str = f'loan: {json.dumps(str(loan).strip(), ensure_ascii=False)}\n' if loan and str(loan).strip() else ""
-    rating_str = f"rating: {rating}\n" if rating else ""
+    rating_val = int(rating) if isinstance(rating, (int, str)) and str(rating).isdigit() and 1 <= int(rating) <= 5 else None
+    rating_str = f"rating: {rating_val}\n" if rating_val is not None else ""
+
+    valid_statuses = {'read', 'reading', 'to-read', 'planned', 'neutral'}
+    clean_status = (status or 'read').strip().replace('_', '-')
+    final_status = clean_status if clean_status in valid_statuses else 'read'
+
     genres_raw = book_info.get('genres') or []
-    genres_list = [str(g).strip() for g in genres_raw if g and str(g).strip()]
+    genres_seen = set()
+    genres_list = []
+    for g in genres_raw:
+        if not g:
+            continue
+        s = str(g).strip()
+        if s and s.lower() not in genres_seen:
+            genres_seen.add(s.lower())
+            genres_list.append(s)
     genres_yaml = "genres:\n" + "".join([f'  - {json.dumps(g, ensure_ascii=False)}\n' for g in genres_list]) if genres_list else "genres: []\n"
 
     desc = (book_info.get('description') or '').strip()
@@ -460,19 +481,21 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
     if not desc:
         desc = f"Экземпляр бумажной книги «{final_title}» ({final_author})."
 
+    lang_val = str(book_info.get('language') or 'ru').strip() or 'ru'
+
     content = f"""---
 title: {json.dumps(final_title, ensure_ascii=False)}
 author: {json.dumps(final_author, ensure_ascii=False)}
-{year_str}{pub_str}{isbn_str}language: {json.dumps(book_info.get('language') or 'ru', ensure_ascii=False)}
+{year_str}{pub_str}{isbn_str}language: {json.dumps(lang_val, ensure_ascii=False)}
 {pages_str}cover: {json.dumps(cover_rel_path, ensure_ascii=False)}
-{genres_yaml}status: {json.dumps(status, ensure_ascii=False)}
+{genres_yaml}status: {json.dumps(final_status, ensure_ascii=False)}
 {loan_str}{room_str}{shelf_str}{rating_str}addedAt: {date.today().isoformat()}
 ---
 
 {desc}
 """
 
-    tmp_md = md_file.with_name(f"{md_file.name}.tmp")
+    tmp_md = md_file.with_name(f"{md_file.name}.{os.getpid()}.tmp")
     try:
         with open(tmp_md, 'w', encoding='utf-8') as f:
             f.write(content)
