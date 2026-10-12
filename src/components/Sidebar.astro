@@ -1,5 +1,5 @@
 ---
-import { BookOpen, Tag, Library, X, SunMoon } from '@lucide/astro';
+import { BookOpen, Tag, Library, X, SunMoon, Sun, Moon, Monitor } from '@lucide/astro';
 import TagIcon from './TagIcon.astro';
 import { normalize } from '../utils/catalog.js';
 
@@ -20,20 +20,20 @@ const isAllBooksSelected = isHome && !currentGenre;
 ---
 
 <aside 
-  class={`flex flex-col h-full bg-[var(--color-sidebar)] select-none ${isMobileDrawer ? 'w-full py-5 pl-4 pr-1' : 'w-[var(--sidebar-width)] p-6 lg:p-7 border-r border-[var(--color-line)]'}`}
+  class={`flex flex-col h-full bg-[var(--color-sidebar)] select-none ${isMobileDrawer ? 'w-full py-5 pl-4 pr-1' : 'w-[var(--sidebar-width)] p-6 border-r border-[var(--color-line)]'}`}
   aria-label="Боковая навигация по библиотеке"
 >
   <!-- Header: Logo / Branding & Mobile Drawer Close Button -->
-  <div class="flex items-center justify-between mb-8 shrink-0 pr-3">
+  <div class={`flex items-center justify-between mb-8 shrink-0 ${isMobileDrawer ? 'pr-3' : ''}`}>
     <a 
       href="/" 
-      class="flex items-center gap-3.5 group text-[var(--color-heading)] focus-visible:rounded-lg"
+      class="flex items-center gap-3 group text-[var(--color-heading)] focus-visible:rounded-lg min-w-0"
       aria-label="Моя библиотека — главная страница"
     >
-      <div class="text-[var(--color-heading)] group-hover:text-[var(--color-primary)] transition-colors">
-        <BookOpen class={`${isMobileDrawer ? 'w-6 h-6' : 'w-8 h-8'} stroke-[1.8]`} />
+      <div class="text-[var(--color-heading)] group-hover:text-[var(--color-primary)] transition-colors shrink-0">
+        <BookOpen class={`${isMobileDrawer ? 'w-6 h-6' : 'w-7.5 h-7.5'} stroke-[1.8]`} />
       </div>
-      <span class={`font-['Lora'] ${isMobileDrawer ? 'text-[22px]' : 'text-[28px] leading-[36px]'} font-medium text-[var(--color-heading)] tracking-[-0.01em]`}>
+      <span class={`font-['Lora'] ${isMobileDrawer ? 'text-[22px]' : 'text-[24px] xl:text-[26px] leading-[32px]'} font-medium text-[var(--color-heading)] tracking-[-0.01em] whitespace-nowrap`}>
         Моя библиотека
       </span>
     </a>
@@ -51,6 +51,59 @@ const isAllBooksSelected = isHome && !currentGenre;
 
   <!-- Navigation items -->
   <nav class={`flex-1 overflow-y-auto space-y-6 ${isMobileDrawer ? 'pr-2' : 'pr-1 -mr-1'}`} aria-label="Разделы каталога">
+    <!-- Theme Selection (above Labels) -->
+    <div class="pb-6 border-b border-[var(--color-line)]">
+      <div class="px-1 mb-2 text-[13px] font-medium tracking-[0.08em] text-[var(--color-muted)] uppercase flex items-center gap-2">
+        <SunMoon class="w-3.5 h-3.5 stroke-[2]" />
+        <span>ТЕМА</span>
+      </div>
+      <div
+        class="theme-radiogroup w-full min-h-[44px] p-1 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] flex items-center gap-1"
+        role="radiogroup"
+        aria-label="Выбор цветовой темы"
+      >
+        <button
+          type="button"
+          class="theme-btn flex-1 h-[36px] px-2 rounded-[6px] transition-colors cursor-pointer flex items-center justify-center bg-[var(--color-primary)] text-[var(--color-on-primary)] shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)]"
+          data-theme-val="system"
+          role="radio"
+          aria-checked="true"
+          tabindex="0"
+          title="Системная тема"
+          aria-label="Системная тема"
+        >
+          <Monitor class="w-4 h-4 stroke-[1.8] shrink-0" />
+          <span class="sr-only">Системная тема</span>
+        </button>
+        <button
+          type="button"
+          class="theme-btn flex-1 h-[36px] px-2 rounded-[6px] transition-colors cursor-pointer flex items-center justify-center text-[var(--color-text)] hover:bg-[var(--color-hover-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)]"
+          data-theme-val="light"
+          role="radio"
+          aria-checked="false"
+          tabindex="-1"
+          title="Светлая тема"
+          aria-label="Светлая тема"
+        >
+          <Sun class="w-4 h-4 stroke-[1.8] shrink-0" />
+          <span class="sr-only">Светлая тема</span>
+        </button>
+        <button
+          type="button"
+          class="theme-btn flex-1 h-[36px] px-2 rounded-[6px] transition-colors cursor-pointer flex items-center justify-center text-[var(--color-text)] hover:bg-[var(--color-hover-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus)]"
+          data-theme-val="dark"
+          role="radio"
+          aria-checked="false"
+          tabindex="-1"
+          title="Тёмная тема"
+          aria-label="Тёмная тема"
+        >
+          <Moon class="w-4 h-4 stroke-[1.8] shrink-0" />
+          <span class="sr-only">Тёмная тема</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Tags Section in Sidebar -->
     <div>
       <div class="px-3 mb-2.5 text-[13px] font-medium tracking-[0.08em] text-[var(--color-muted)] uppercase flex items-center gap-2">
@@ -113,25 +166,6 @@ const isAllBooksSelected = isHome && !currentGenre;
           );
         })}
       </ul>
-    </div>
-
-    <!-- Theme Selection (DESIGN.md 10.2) -->
-    <div class="pt-6 border-t border-[var(--color-line)] mt-6">
-      <label for={isMobileDrawer ? 'theme-select-mobile' : 'theme-select'} class="block text-[13px] font-medium tracking-[0.08em] text-[var(--color-muted)] uppercase mb-2 flex items-center gap-2">
-        <SunMoon class="w-3.5 h-3.5 stroke-[2]" />
-        <span>ТЕМА</span>
-      </label>
-      <div class="relative">
-        <select
-          id={isMobileDrawer ? 'theme-select-mobile' : 'theme-select'}
-          class="theme-select-input w-full min-h-[44px] px-3.5 py-2.5 bg-[var(--color-surface)] border border-[var(--color-control-border)] rounded-[var(--radius-control)] text-[14px] text-[var(--color-text)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-focus)] focus-visible:ring-offset-3 cursor-pointer transition-colors"
-          aria-label="Выбор цветовой темы"
-        >
-          <option value="system">Системная</option>
-          <option value="light">Светлая</option>
-          <option value="dark">Тёмная</option>
-        </select>
-      </div>
     </div>
   </nav>
 </aside>

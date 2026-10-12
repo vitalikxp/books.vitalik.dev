@@ -280,25 +280,68 @@ const genres = Array.from(genreMap.values())
         };
         window.addEventListener('keydown', escapeKeyListener);
 
-        // Theme controller: sync select elements with current preference and localStorage
-        const themeSelects = document.querySelectorAll('.theme-select-input') as NodeListOf<HTMLSelectElement>;
-        const currentPref = document.documentElement.dataset.themePreference || 'system';
-        themeSelects.forEach((sel) => {
-          sel.value = currentPref;
-          sel.addEventListener('change', (e) => {
-            const newPref = (e.target as HTMLSelectElement).value;
-            try {
-              localStorage.setItem('my-library.theme', newPref);
-            } catch {}
-            document.documentElement.dataset.themePreference = newPref;
+        // Theme controller: sync button states with current preference and localStorage
+        const themeBtns = document.querySelectorAll('.theme-btn') as NodeListOf<HTMLButtonElement>;
+        const themeRadioGroups = document.querySelectorAll('.theme-radiogroup');
 
-            const mq = window.matchMedia('(prefers-color-scheme: dark)');
-            const resolved = newPref === 'system' ? (mq.matches ? 'dark' : 'light') : newPref;
-            document.documentElement.dataset.theme = resolved;
+        function applyThemePreference(pref: string) {
+          try {
+            localStorage.setItem('my-library.theme', pref);
+          } catch {}
+          document.documentElement.dataset.themePreference = pref;
 
-            themeSelects.forEach((other) => {
-              if (other !== sel) other.value = newPref;
-            });
+          const mq = window.matchMedia('(prefers-color-scheme: dark)');
+          const resolved = pref === 'system' ? (mq.matches ? 'dark' : 'light') : pref;
+          document.documentElement.dataset.theme = resolved;
+
+          themeBtns.forEach((btn) => {
+            const isCurrent = btn.dataset.themeVal === pref;
+            if (isCurrent) {
+              btn.setAttribute('aria-checked', 'true');
+              btn.setAttribute('tabindex', '0');
+              btn.classList.add('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]', 'shadow-xs', 'font-medium');
+              btn.classList.remove('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]', 'font-normal');
+            } else {
+              btn.setAttribute('aria-checked', 'false');
+              btn.setAttribute('tabindex', '-1');
+              btn.classList.remove('bg-[var(--color-primary)]', 'text-[var(--color-on-primary)]', 'shadow-xs', 'font-medium');
+              btn.classList.add('text-[var(--color-text)]', 'hover:bg-[var(--color-hover-surface)]', 'font-normal');
+            }
+          });
+        }
+
+        const initialPref = document.documentElement.dataset.themePreference || 'system';
+        applyThemePreference(initialPref);
+
+        themeBtns.forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const val = btn.dataset.themeVal || 'system';
+            applyThemePreference(val);
+          });
+        });
+
+        // Roving tabindex keyboard navigation with Arrow keys
+        themeRadioGroups.forEach((group) => {
+          group.addEventListener('keydown', (e) => {
+            const keyEvent = e as KeyboardEvent;
+            const buttons = Array.from(group.querySelectorAll('.theme-btn')) as HTMLButtonElement[];
+            const currentPrefNow = document.documentElement.dataset.themePreference || 'system';
+            const currentIndex = buttons.findIndex((b) => b.dataset.themeVal === currentPrefNow);
+            if (currentIndex === -1) return;
+
+            let newIndex = -1;
+            if (keyEvent.key === 'ArrowRight' || keyEvent.key === 'ArrowDown') {
+              newIndex = (currentIndex + 1) % buttons.length;
+            } else if (keyEvent.key === 'ArrowLeft' || keyEvent.key === 'ArrowUp') {
+              newIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+            }
+
+            if (newIndex !== -1) {
+              keyEvent.preventDefault();
+              const targetVal = buttons[newIndex].dataset.themeVal || 'system';
+              applyThemePreference(targetVal);
+              buttons[newIndex].focus();
+            }
           });
         });
       }
