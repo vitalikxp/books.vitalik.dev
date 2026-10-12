@@ -6,6 +6,7 @@ publisher: "Steve Jackson Games"
 isbn: "978-1-55634-729-0"
 language: "ru"
 cover: "/covers/stiv-dzhekson-shon-panch-devid-pulver-gurps-basic-set-characters-fourth-edition.jpg"
+photo: "IMG_2205.HEIC"
 genres:
   - "Настольные ролевые игры"
   - "GURPS"

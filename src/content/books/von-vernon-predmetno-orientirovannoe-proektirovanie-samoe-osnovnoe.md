@@ -6,6 +6,7 @@ publisher: "Диалектика / Вильямс"
 isbn: "978-5-9908462-8-9"
 language: "ru"
 cover: "/covers/von-vernon-predmetno-orientirovannoe-proektirovanie-samoe-osnovnoe.jpg"
+photo: "IMG_2200.HEIC"
 genres:
   - "Архитектура"
   - "DDD"

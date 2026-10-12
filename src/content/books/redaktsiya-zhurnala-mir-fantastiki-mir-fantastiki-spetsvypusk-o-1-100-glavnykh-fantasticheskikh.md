@@ -5,6 +5,7 @@ year: 2019
 publisher: "Hobby World"
 language: "ru"
 cover: "/covers/redaktsiya-zhurnala-mir-fantastiki-mir-fantastiki-spetsvypusk-o-1-100-glavnykh-fantasticheskikh.jpg"
+photo: "IMG_2227.HEIC"
 genres:
   - "Фантастика"
   - "Литература"

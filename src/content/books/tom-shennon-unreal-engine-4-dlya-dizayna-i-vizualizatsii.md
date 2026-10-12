@@ -6,6 +6,7 @@ publisher: "ДМК Пресс"
 isbn: "978-5-97060-642-1"
 language: "ru"
 cover: "/covers/tom-shennon-unreal-engine-4-dlya-dizayna-i-vizualizatsii.jpg"
+photo: "IMG_2162.HEIC"
 genres:
   - "Unreal Engine"
   - "3D-графика"

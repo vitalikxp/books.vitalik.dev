@@ -5,6 +5,7 @@ year: 2019
 publisher: "Студия 101 / Free League"
 language: "ru"
 cover: "/covers/tomas-kherenstam-petter-bengtsson-mutanty-tochka-otschyota-putevoditel-po-zone-o-3-smert-myaso.jpg"
+photo: "IMG_2242.HEIC"
 genres:
   - "Настольные ролевые игры"
   - "Мутанты"

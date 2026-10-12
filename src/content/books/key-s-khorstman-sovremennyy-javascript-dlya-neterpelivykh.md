@@ -6,6 +6,7 @@ publisher: "ДМК Пресс"
 isbn: "978-5-97060-917-0"
 language: "ru"
 cover: "/covers/key-s-khorstman-sovremennyy-javascript-dlya-neterpelivykh.jpg"
+photo: "IMG_2207.HEIC"
 genres:
   - "JavaScript"
   - "Веб-разработка"

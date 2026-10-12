@@ -6,6 +6,7 @@ publisher: "Комильфо"
 isbn: "978-5-91339-974-8"
 language: "ru"
 cover: "/covers/nik-perumov-aleksey-gorbut-koltso-tmy-elfiyskiy-klinok-tom-1.jpg"
+photo: "IMG_2254.HEIC"
 genres:
   - "Комиксы"
   - "Фэнтези"

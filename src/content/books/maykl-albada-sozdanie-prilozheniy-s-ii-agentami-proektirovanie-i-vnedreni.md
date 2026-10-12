@@ -6,6 +6,7 @@ publisher: "Sprintbook / O'Reilly"
 isbn: "978-5-97060-997-2"
 language: "ru"
 cover: "/covers/maykl-albada-sozdanie-prilozheniy-s-ii-agentami-proektirovanie-i-vnedreni.jpg"
+photo: "IMG_2215.HEIC"
 genres:
   - "Искусственный интеллект"
   - "ИИ-агенты"

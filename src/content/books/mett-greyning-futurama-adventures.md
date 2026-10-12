@@ -6,6 +6,7 @@ publisher: "АСТ"
 isbn: "978-5-17-109406-5"
 language: "ru"
 cover: "/covers/mett-greyning-futurama-adventures.jpg"
+photo: "IMG_2264.HEIC"
 genres:
   - "Комиксы"
   - "Футурама"

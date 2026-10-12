@@ -5,6 +5,7 @@ year: 2018
 publisher: "Студия 101 / Free League"
 language: "ru"
 cover: "/covers/tomas-kherenstam-petter-bengtsson-mutanty-tochka-otschyota-putevoditel-po-zone-o-2-myortvoe-si.jpg"
+photo: "IMG_2241.HEIC"
 genres:
   - "Настольные ролевые игры"
   - "Мутанты"

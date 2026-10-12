@@ -6,6 +6,7 @@ publisher: "Питер"
 isbn: "978-5-4461-1547-1"
 language: "ru"
 cover: "/covers/e-gamma-r-khelm-r-dzhonson-dzh-vlissides-patterny-obektno-orientirovannogo-proektirovaniya.jpg"
+photo: "IMG_2187.HEIC"
 genres:
   - "Архитектура"
   - "Паттерны проектирования"

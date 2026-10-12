@@ -6,6 +6,7 @@ publisher: "Sprintbook / Packt"
 isbn: "978-5-97060-994-1"
 language: "ru"
 cover: "/covers/nikolas-alekhandro-borromeo-khuan-gabriel-gomila-salas-razrabotka-igr-na-unity.jpg"
+photo: "IMG_2173.HEIC"
 genres:
   - "Unity"
   - "C#"

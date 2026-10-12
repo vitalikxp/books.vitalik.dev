@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-118844-3"
 language: "ru"
 cover: "/covers/kristofer-khart-rukovodstvo-po-risovaniyu-anime.jpg"
+photo: "IMG_2152.HEIC"
 genres:
   - "Рисование"
   - "Аниме"

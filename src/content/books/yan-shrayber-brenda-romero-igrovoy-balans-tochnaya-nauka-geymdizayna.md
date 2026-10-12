@@ -6,6 +6,7 @@ publisher: "ДМК Пресс"
 isbn: "978-5-97060-949-1"
 language: "ru"
 cover: "/covers/yan-shrayber-brenda-romero-igrovoy-balans-tochnaya-nauka-geymdizayna.jpg"
+photo: "IMG_2168.HEIC"
 genres:
   - "Геймдизайн"
   - "Геймдев"

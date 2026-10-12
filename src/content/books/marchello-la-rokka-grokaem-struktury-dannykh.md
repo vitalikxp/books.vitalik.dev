@@ -6,6 +6,7 @@ publisher: "Питер / Manning"
 isbn: "978-5-4461-2090-1"
 language: "ru"
 cover: "/covers/marchello-la-rokka-grokaem-struktury-dannykh.jpg"
+photo: "IMG_2204.HEIC"
 genres:
   - "Структуры данных"
   - "Computer Science"

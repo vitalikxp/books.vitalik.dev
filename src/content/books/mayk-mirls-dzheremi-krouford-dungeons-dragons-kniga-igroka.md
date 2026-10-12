@@ -6,6 +6,7 @@ publisher: "Hobby World / Wizards of the Coast"
 isbn: "978-5-91996-224-3"
 language: "ru"
 cover: "/covers/mayk-mirls-dzheremi-krouford-dungeons-dragons-kniga-igroka.jpg"
+photo: "IMG_2234.HEIC"
 genres:
   - "Настольные ролевые игры"
   - "Dungeons & Dragons"

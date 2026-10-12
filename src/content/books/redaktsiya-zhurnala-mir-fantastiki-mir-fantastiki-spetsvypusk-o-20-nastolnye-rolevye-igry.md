@@ -5,6 +5,7 @@ year: 2023
 publisher: "Hobby World"
 language: "ru"
 cover: "/covers/redaktsiya-zhurnala-mir-fantastiki-mir-fantastiki-spetsvypusk-o-20-nastolnye-rolevye-igry.jpg"
+photo: "IMG_2243.HEIC"
 genres:
   - "Настольные ролевые игры"
   - "Журналы"

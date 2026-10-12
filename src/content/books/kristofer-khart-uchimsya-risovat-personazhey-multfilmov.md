@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-162985-4"
 language: "ru"
 cover: "/covers/kristofer-khart-uchimsya-risovat-personazhey-multfilmov.jpg"
+photo: "IMG_2154.HEIC"
 genres:
   - "Рисование"
   - "Анимация"

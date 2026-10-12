@@ -6,6 +6,7 @@ publisher: "Питер / Manning"
 isbn: "978-5-4461-1981-3"
 language: "ru"
 cover: "/covers/uilyam-dennis-kubernetes-dlya-razrabotchikov.jpg"
+photo: "IMG_2213.HEIC"
 genres:
   - "Kubernetes"
   - "DevOps"

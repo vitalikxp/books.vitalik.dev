@@ -20,7 +20,9 @@ const books = defineCollection({
     room: z.string().optional(), // e.g. "Гостиная", "Кабинет", "Спальня"
     shelf: z.string().optional(), // e.g. "полка 1", "полка 2"
     rating: z.number().min(1).max(5).optional(),
-    addedAt: z.coerce.date().default(() => new Date()),
+    addedAt: z.coerce.date().optional(),
+    photo: z.string().optional(),
+    photoDate: z.coerce.date().optional(),
   }),
 });
 

@@ -7,6 +7,7 @@ isbn: "978-5-4461-2261-5"
 language: "ru"
 pages: 432
 cover: "/covers/silviya-botros-dzheremi-tinli-mysql-po-maksimumu-proverennye-strategii.jpg"
+photo: "IMG_2138.HEIC"
 genres:
   - "Базы данных"
   - "MySQL"

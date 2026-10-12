@@ -6,6 +6,7 @@ publisher: "Солон-Пресс"
 isbn: "978-5-91359-335-1"
 language: "ru"
 cover: "/covers/felitsiya-khess-prakticheskoe-posobie-blender-4-dlya-lyubiteley-i-profession.jpg"
+photo: "IMG_2183.HEIC"
 genres:
   - "Blender"
   - "3D-графика"

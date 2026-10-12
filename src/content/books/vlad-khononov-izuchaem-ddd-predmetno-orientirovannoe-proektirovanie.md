@@ -6,6 +6,7 @@ publisher: "БХВ / O'Reilly"
 isbn: "978-5-9775-1215-2"
 language: "ru"
 cover: "/covers/vlad-khononov-izuchaem-ddd-predmetno-orientirovannoe-proektirovanie.jpg"
+photo: "IMG_2179.HEIC"
 genres:
   - "Архитектура"
   - "DDD"

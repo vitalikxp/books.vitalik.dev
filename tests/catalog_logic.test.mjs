@@ -464,7 +464,7 @@ test('5. Компараторы сортировки (compareBooks)', async (t) 
     },
   ];
 
-  await t.test('сортировка «recent» (по дате добавления desc, tie-break по году desc, затем по названию)', () => {
+  await t.test('сортировка «recent» (сначала год издания desc, затем дата добавления desc, tie-break по названию)', () => {
     const fixtureBooks = [
       ...books,
       {
@@ -476,11 +476,62 @@ test('5. Компараторы сортировки (compareBooks)', async (t) 
       },
     ];
     const sorted = [...fixtureBooks].sort((a, b) => compareBooks(a, b, 'recent'));
-    // book-2 (added: 1720000000) -> book-1 (added: 1710000000) ->
-    // book-4 (added: 1700000000, year 2022) ->
-    // book-5 (added: 1700000000, year 2021, 'Абстракция...') ->
-    // book-3 (added: 1700000000, year 2021, 'Computer Science...')
-    assert.deepEqual(sorted.map((b) => b.id), ['book-2', 'book-1', 'book-4', 'book-5', 'book-3']);
+    // book-4 (year: 2022, added: 1700000000) ->
+    // book-5 (year: 2021, added: 1700000000, title: 'Абстракция...') ->
+    // book-3 (year: 2021, added: 1700000000, title: 'Computer Science...') ->
+    // book-2 (year: 2019, added: 1720000000) ->
+    // book-1 (year: 2018, added: 1710000000)
+    assert.deepEqual(sorted.map((b) => b.id), ['book-4', 'book-5', 'book-3', 'book-2', 'book-1']);
+  });
+
+  await t.test('сортировка «recent» использует дату фото (photoDate) при отсутствии даты добавления (added)', () => {
+    const photoBooks = [
+      { id: 'p-1', title: 'Книга 1', year: 2024, added: null, photoDate: '2026-10-09T10:00:00Z' },
+      { id: 'p-2', title: 'Книга 2', year: 2024, added: '2026-10-08T10:00:00Z', photoDate: '2026-10-01T10:00:00Z' },
+      { id: 'p-3', title: 'Книга 3', year: 2024, added: undefined, photoDate: '2026-10-10T12:00:00Z' },
+    ];
+    const sorted = [...photoBooks].sort((a, b) => compareBooks(a, b, 'recent'));
+    // Все год 2024:
+    // p-3 (photoDate: 2026-10-10) -> p-1 (photoDate: 2026-10-09) -> p-2 (added: 2026-10-08)
+    assert.deepEqual(sorted.map((b) => b.id), ['p-3', 'p-1', 'p-2']);
+  });
+
+  await t.test('сортировка «recent» отдает приоритет дате добавления над датой фото при наличии обеих', () => {
+    const mixedDateBooks = [
+      { id: 'b-old-photo-new-add', title: 'Книга A', year: 2024, added: '2026-10-12T00:00:00Z', photoDate: '2026-10-01T00:00:00Z' },
+      { id: 'b-new-photo-old-add', title: 'Книга B', year: 2024, added: '2026-10-05T00:00:00Z', photoDate: '2026-10-15T00:00:00Z' },
+    ];
+    const sorted = [...mixedDateBooks].sort((a, b) => compareBooks(a, b, 'recent'));
+    // Книга A имеет более свежую дату добавления (12 октября > 5 октября)
+    assert.deepEqual(sorted.map((b) => b.id), ['b-old-photo-new-add', 'b-new-photo-old-add']);
+  });
+
+  await t.test('сортировка «recent» отдает первичный приоритет году издания (более свежий год всегда выше)', () => {
+    const yearBooks = [
+      { id: 'b-2023-new-date', title: 'Новая дата, старый год', year: 2023, added: '2026-10-12T00:00:00Z' },
+      { id: 'b-2025-old-date', title: 'Старая дата, новый год', year: 2025, added: '2026-01-01T00:00:00Z' },
+    ];
+    const sorted = [...yearBooks].sort((a, b) => compareBooks(a, b, 'recent'));
+    // 2025 выше 2023, несмотря на дату добавления
+    assert.deepEqual(sorted.map((b) => b.id), ['b-2025-old-date', 'b-2023-new-date']);
+  });
+
+  await t.test('сортировка «recent» размещает книги без года (undefined/null/0) в конце списка', () => {
+    const noYearBooks = [
+      { id: 'b-no-year', title: 'Без года', year: undefined, added: '2026-10-12T00:00:00Z' },
+      { id: 'b-2010', title: '2010 год', year: 2010, added: '2026-01-01T00:00:00Z' },
+    ];
+    const sorted = [...noYearBooks].sort((a, b) => compareBooks(a, b, 'recent'));
+    assert.deepEqual(sorted.map((b) => b.id), ['b-2010', 'b-no-year']);
+  });
+
+  await t.test('сортировка «recent» работает с dataset объектами с data-photo-date при пустом data-added', () => {
+    const datasetBooks = [
+      { id: 'b-1', title: 'Книга 1', year: '2024', added: '', photoDate: '1791483447000' },
+      { id: 'b-2', title: 'Книга 2', year: '2024', added: '', photoDate: '1791483500000' },
+    ];
+    const sorted = [...datasetBooks].sort((a, b) => compareBooks(a, b, 'recent'));
+    assert.deepEqual(sorted.map((b) => b.id), ['b-2', 'b-1']);
   });
 
   await t.test('сортировка «title» (по названию А-Я)', () => {

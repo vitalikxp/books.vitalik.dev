@@ -6,6 +6,7 @@ publisher: "АСТ"
 isbn: "978-5-17-098864-8"
 language: "ru"
 cover: "/covers/robert-m-pyorsig-dzen-i-iskusstvo-ukhoda-za-mototsiklom.jpg"
+photo: "IMG_2185.HEIC"
 genres:
   - "Философия"
   - "Классика"

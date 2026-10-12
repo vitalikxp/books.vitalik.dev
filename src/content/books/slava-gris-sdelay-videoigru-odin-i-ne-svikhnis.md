@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-177891-0"
 language: "ru"
 cover: "/covers/slava-gris-sdelay-videoigru-odin-i-ne-svikhnis.jpg"
+photo: "IMG_2166.HEIC"
 genres:
   - "Геймдев"
   - "Геймдизайн"

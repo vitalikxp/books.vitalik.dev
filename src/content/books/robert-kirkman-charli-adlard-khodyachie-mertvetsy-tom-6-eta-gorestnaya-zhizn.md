@@ -6,6 +6,7 @@ publisher: "Комильфо / Image Comics"
 isbn: "978-5-91339-456-9"
 language: "ru"
 cover: "/covers/robert-kirkman-charli-adlard-khodyachie-mertvetsy-tom-6-eta-gorestnaya-zhizn.jpg"
+photo: "IMG_2272.HEIC"
 genres:
   - "Комиксы"
   - "Ходячие мертвецы"

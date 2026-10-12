@@ -6,6 +6,7 @@ publisher: "Hobby World / Paizo"
 isbn: "978-5-91996-105-5"
 language: "ru"
 cover: "/covers/dzheyson-bulman-pathfinder-nastolnaya-rolevaya-igra-bestiariy.jpg"
+photo: "IMG_2232.HEIC"
 genres:
   - "Настольные ролевые игры"
   - "Pathfinder"

@@ -6,6 +6,7 @@ publisher: "АСТ"
 isbn: "978-5-17-089422-2"
 language: "ru"
 cover: "/covers/mett-greyning-futurama-o-rama.jpg"
+photo: "IMG_2261.HEIC"
 genres:
   - "Комиксы"
   - "Футурама"

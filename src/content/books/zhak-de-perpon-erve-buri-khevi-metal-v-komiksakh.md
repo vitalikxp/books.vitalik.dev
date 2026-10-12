@@ -6,6 +6,7 @@ publisher: "Белое Яблоко"
 isbn: "978-5-9903760-4-5"
 language: "ru"
 cover: "/covers/zhak-de-perpon-erve-buri-khevi-metal-v-komiksakh.jpg"
+photo: "IMG_2259.HEIC"
 genres:
   - "Комиксы"
   - "Музыка"

@@ -6,6 +6,7 @@ publisher: "ДМК Пресс / No Starch Press"
 isbn: "978-5-97060-953-8"
 language: "ru"
 cover: "/covers/gebriel-gambetta-kompyuternaya-grafika-reytreysing-i-rasterizatsiya.jpg"
+photo: "IMG_2175.HEIC"
 genres:
   - "Компьютерная графика"
   - "Алгоритмы"

@@ -6,6 +6,7 @@ publisher: "Питер / No Starch Press"
 isbn: "978-5-4461-2391-9"
 language: "ru"
 cover: "/covers/kristian-mayer-iskusstvo-chistogo-koda-kak-izbavitsya-ot-slozhnosti-i-upros.jpg"
+photo: "IMG_2186.HEIC"
 genres:
   - "Программирование"
   - "Архитектура"

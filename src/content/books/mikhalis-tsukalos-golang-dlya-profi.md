@@ -6,6 +6,7 @@ publisher: "Питер"
 isbn: "978-5-4461-2294-3"
 language: "ru"
 cover: "/covers/mikhalis-tsukalos-golang-dlya-profi.jpg"
+photo: "IMG_2146.HEIC"
 genres:
   - "Go"
   - "Программирование"

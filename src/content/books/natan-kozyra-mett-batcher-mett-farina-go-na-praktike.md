@@ -6,6 +6,7 @@ publisher: "ДМК Пресс / Manning"
 isbn: "978-5-97060-948-4"
 language: "ru"
 cover: "/covers/natan-kozyra-mett-batcher-mett-farina-go-na-praktike.jpg"
+photo: "IMG_2217.HEIC"
 genres:
   - "Go"
   - "Программирование"

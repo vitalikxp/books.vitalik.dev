@@ -6,6 +6,7 @@ publisher: "XL Media"
 isbn: "978-5-91996-340-0"
 language: "ru"
 cover: "/covers/tsukumidzu-poslednee-puteshestvie-devochek-tom-2.jpg"
+photo: "IMG_2220.HEIC"
 genres:
   - "Манга"
   - "Постапокалипсис"

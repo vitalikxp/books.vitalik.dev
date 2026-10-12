@@ -6,6 +6,7 @@ publisher: "Питер / O'Reilly"
 isbn: "978-5-4461-2092-5"
 language: "ru"
 cover: "/covers/sem-nyumen-sozdanie-mikroservisov.jpg"
+photo: "IMG_2180.HEIC"
 genres:
   - "Архитектура"
   - "Микросервисы"

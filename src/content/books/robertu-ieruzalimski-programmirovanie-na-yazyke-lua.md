@@ -6,6 +6,7 @@ publisher: "ДМК Пресс"
 isbn: "978-5-97060-205-8"
 language: "ru"
 cover: "/covers/robertu-ieruzalimski-programmirovanie-na-yazyke-lua.jpg"
+photo: "IMG_2161.HEIC"
 genres:
   - "Lua"
   - "Программирование"

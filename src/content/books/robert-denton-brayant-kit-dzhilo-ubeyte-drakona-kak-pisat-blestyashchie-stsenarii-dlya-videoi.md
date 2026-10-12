@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-118836-8"
 language: "ru"
 cover: "/covers/robert-denton-brayant-kit-dzhilo-ubeyte-drakona-kak-pisat-blestyashchie-stsenarii-dlya-videoi.jpg"
+photo: "IMG_2192.HEIC"
 genres:
   - "Геймдизайн"
   - "Сценарное мастерство"

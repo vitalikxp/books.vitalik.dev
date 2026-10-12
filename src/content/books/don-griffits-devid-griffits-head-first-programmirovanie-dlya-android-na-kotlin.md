@@ -7,6 +7,7 @@ isbn: "978-5-4461-2016-1"
 language: "ru"
 pages: 912
 cover: "/covers/don-griffits-devid-griffits-head-first-programmirovanie-dlya-android-na-kotlin.jpg"
+photo: "IMG_2141.HEIC"
 genres:
   - "Kotlin"
   - "Android"

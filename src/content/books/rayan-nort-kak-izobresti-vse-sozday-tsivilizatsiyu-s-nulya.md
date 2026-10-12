@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-100259-6"
 language: "ru"
 cover: "/covers/rayan-nort-kak-izobresti-vse-sozday-tsivilizatsiyu-s-nulya.jpg"
+photo: "IMG_2211.HEIC"
 genres:
   - "Нон-фикшн"
   - "Популярная наука"

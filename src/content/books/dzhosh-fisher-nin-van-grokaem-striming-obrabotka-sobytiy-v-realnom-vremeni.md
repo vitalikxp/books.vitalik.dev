@@ -6,6 +6,7 @@ publisher: "ДМК Пресс / Manning"
 isbn: "978-5-97060-988-0"
 language: "ru"
 cover: "/covers/dzhosh-fisher-nin-van-grokaem-striming-obrabotka-sobytiy-v-realnom-vremeni.jpg"
+photo: "IMG_2176.HEIC"
 genres:
   - "Бэкенд"
   - "Архитектура"

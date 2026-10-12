@@ -7,6 +7,7 @@ isbn: "978-5-4461-2010-9"
 language: "ru"
 pages: 240
 cover: "/covers/kori-altkhoff-computer-science-dlya-programmista-samouchki-vse-chto-nuzhno.jpg"
+photo: "IMG_2134.HEIC"
 genres:
   - "Программирование"
   - "Алгоритмы"

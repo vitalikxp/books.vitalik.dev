@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-106579-9"
 language: "ru"
 cover: "/covers/mikhail-kadikov-proektirovanie-virtualnykh-mirov-teoriya-i-praktika-dizayna.jpg"
+photo: "IMG_2167.HEIC"
 genres:
   - "Level Design"
   - "Геймдев"

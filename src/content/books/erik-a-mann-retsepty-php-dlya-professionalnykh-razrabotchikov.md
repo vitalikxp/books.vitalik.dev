@@ -6,6 +6,7 @@ publisher: "Sprintbook / O'Reilly"
 isbn: "978-5-97060-998-9"
 language: "ru"
 cover: "/covers/erik-a-mann-retsepty-php-dlya-professionalnykh-razrabotchikov.jpg"
+photo: "IMG_2202.HEIC"
 genres:
   - "PHP"
   - "Веб-разработка"

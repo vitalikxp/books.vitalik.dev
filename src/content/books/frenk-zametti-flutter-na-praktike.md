@@ -6,6 +6,7 @@ publisher: "ДМК Пресс"
 isbn: "978-5-97060-888-3"
 language: "ru"
 cover: "/covers/frenk-zametti-flutter-na-praktike.jpg"
+photo: "IMG_2189.HEIC"
 genres:
   - "Flutter"
   - "Dart"

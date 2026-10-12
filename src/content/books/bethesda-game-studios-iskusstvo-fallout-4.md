@@ -6,6 +6,7 @@ publisher: "Белый Единорог / Dark Horse"
 isbn: "978-5-905672-99-6"
 language: "ru"
 cover: "/covers/bethesda-game-studios-iskusstvo-fallout-4.jpg"
+photo: "IMG_2246.HEIC"
 genres:
   - "Артбуки"
   - "Fallout"

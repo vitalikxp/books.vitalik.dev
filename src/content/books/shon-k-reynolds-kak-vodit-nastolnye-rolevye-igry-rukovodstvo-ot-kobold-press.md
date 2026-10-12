@@ -6,6 +6,7 @@ publisher: "Студия 101 / Kobold Press"
 isbn: "978-5-6045051-4-4"
 language: "ru"
 cover: "/covers/shon-k-reynolds-kak-vodit-nastolnye-rolevye-igry-rukovodstvo-ot-kobold-press.jpg"
+photo: "IMG_2244.HEIC"
 genres:
   - "Настольные ролевые игры"
   - "Геймдизайн"

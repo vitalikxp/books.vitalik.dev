@@ -6,6 +6,7 @@ publisher: "Студия 101 / Kobold Press"
 isbn: "978-5-6045051-5-1"
 language: "ru"
 cover: "/covers/mishel-karter-kak-sozdavat-otdelnye-syuzhety-i-tselye-kampanii-rukovodstvo.jpg"
+photo: "IMG_2245.HEIC"
 genres:
   - "Настольные ролевые игры"
   - "Сценарное мастерство"

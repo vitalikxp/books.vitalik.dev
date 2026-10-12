@@ -6,6 +6,7 @@ publisher: "Питер"
 isbn: "978-5-4461-1259-3"
 language: "ru"
 cover: "/covers/erik-khenchett-bendzhamin-listuon-vue-js-v-deystvii.jpg"
+photo: "IMG_2149.HEIC"
 genres:
   - "Vue"
   - "JavaScript"

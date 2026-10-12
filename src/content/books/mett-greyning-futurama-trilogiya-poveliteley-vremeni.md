@@ -6,6 +6,7 @@ publisher: "АСТ"
 isbn: "978-5-17-098865-5"
 language: "ru"
 cover: "/covers/mett-greyning-futurama-trilogiya-poveliteley-vremeni.jpg"
+photo: "IMG_2263.HEIC"
 genres:
   - "Комиксы"
   - "Футурама"

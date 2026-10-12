@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-184517-9"
 language: "ru"
 cover: "/covers/olga-maksimenkova-nikita-veselko-programmirovanie-v-unreal-engine-5-dlya-nachinayushchego-igr.jpg"
+photo: "IMG_2163.HEIC"
 genres:
   - "Unreal Engine"
   - "Blueprints"

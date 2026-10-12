@@ -6,6 +6,7 @@ publisher: "Питер"
 isbn: "978-5-4461-2399-5"
 language: "ru"
 cover: "/covers/aleks-syuy-desmond-chzhou-favaz-bokkhari-object-oriented-design-podgotovka-k-slozhnomu-intervyu.jpg"
+photo: "IMG_2214.HEIC"
 genres:
   - "Собеседования"
   - "ООП"

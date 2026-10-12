@@ -6,6 +6,7 @@ publisher: "Комильфо / Image Comics"
 isbn: "978-5-91339-453-8"
 language: "ru"
 cover: "/covers/robert-kirkman-charli-adlard-khodyachie-mertvetsy-tom-3-v-bezopasnosti-za-reshyotkoy.jpg"
+photo: "IMG_2269.HEIC"
 genres:
   - "Комиксы"
   - "Ходячие мертвецы"

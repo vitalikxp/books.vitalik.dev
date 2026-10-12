@@ -6,6 +6,7 @@ publisher: "Комильфо / Image Comics"
 isbn: "978-5-91339-455-2"
 language: "ru"
 cover: "/covers/robert-kirkman-charli-adlard-khodyachie-mertvetsy-tom-5-luchshaya-zashchita.jpg"
+photo: "IMG_2271.HEIC"
 genres:
   - "Комиксы"
   - "Ходячие мертвецы"

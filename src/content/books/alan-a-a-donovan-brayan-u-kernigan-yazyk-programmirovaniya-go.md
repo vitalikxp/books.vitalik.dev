@@ -6,6 +6,7 @@ publisher: "Вильямс"
 isbn: "978-5-8459-2051-5"
 language: "ru"
 cover: "/covers/alan-a-a-donovan-brayan-u-kernigan-yazyk-programmirovaniya-go.jpg"
+photo: "IMG_2147.HEIC"
 genres:
   - "Go"
   - "Программирование"

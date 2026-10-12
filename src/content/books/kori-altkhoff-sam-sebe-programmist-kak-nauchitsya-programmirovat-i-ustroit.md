@@ -7,6 +7,7 @@ isbn: "978-5-04-090834-9"
 language: "ru"
 pages: 208
 cover: "/covers/kori-altkhoff-sam-sebe-programmist-kak-nauchitsya-programmirovat-i-ustroit.jpg"
+photo: "IMG_2137.HEIC"
 genres:
   - "Программирование"
   - "Python"

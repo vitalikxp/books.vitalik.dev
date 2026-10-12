@@ -6,6 +6,7 @@ publisher: "Sprintbook / O'Reilly"
 isbn: "978-5-97060-996-5"
 language: "ru"
 cover: "/covers/brent-laster-github-copilot-programmirovanie-v-pare-s-ii.jpg"
+photo: "IMG_2223.HEIC"
 genres:
   - "Искусственный интеллект"
   - "Программирование"

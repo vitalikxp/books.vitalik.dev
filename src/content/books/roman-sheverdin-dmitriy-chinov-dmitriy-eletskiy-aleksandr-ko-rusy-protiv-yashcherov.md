@@ -6,6 +6,7 @@ publisher: "Альпака"
 isbn: "978-5-907727-14-4"
 language: "ru"
 cover: "/covers/roman-sheverdin-dmitriy-chinov-dmitriy-eletskiy-aleksandr-ko-rusy-protiv-yashcherov.jpg"
+photo: "IMG_2266.HEIC"
 genres:
   - "Комиксы"
   - "Юмор"

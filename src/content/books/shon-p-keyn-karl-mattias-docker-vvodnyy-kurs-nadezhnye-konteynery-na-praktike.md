@@ -6,6 +6,7 @@ publisher: "БХВ / O'Reilly"
 isbn: "978-5-9775-1845-1"
 language: "ru"
 cover: "/covers/shon-p-keyn-karl-mattias-docker-vvodnyy-kurs-nadezhnye-konteynery-na-praktike.jpg"
+photo: "IMG_2218.HEIC"
 genres:
   - "Docker"
   - "DevOps"

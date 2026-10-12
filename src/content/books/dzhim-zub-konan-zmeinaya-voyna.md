@@ -6,6 +6,7 @@ publisher: "Комильфо / Marvel"
 isbn: "978-5-04-121642-9"
 language: "ru"
 cover: "/covers/dzhim-zub-konan-zmeinaya-voyna.jpg"
+photo: "IMG_2257.HEIC"
 genres:
   - "Комиксы"
   - "Marvel"

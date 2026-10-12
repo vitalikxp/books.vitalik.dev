@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-106575-1"
 language: "ru"
 cover: "/covers/viktoriya-rozental-fallout-ofitsialnaya-povarennaya-kniga-zhitelya-ubezhishcha.jpg"
+photo: "IMG_2247.HEIC"
 genres:
   - "Кулинария"
   - "Fallout"

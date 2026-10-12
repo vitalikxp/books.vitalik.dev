@@ -7,6 +7,7 @@ isbn: "978-5-4461-1835-9"
 language: "ru"
 pages: 224
 cover: "/covers/uolter-shilds-sql-bystroe-pogruzhenie.jpg"
+photo: "IMG_2140.HEIC"
 genres:
   - "Базы данных"
   - "SQL"

@@ -98,11 +98,22 @@ export function matchesFilter(book, searchQuery, selectedGenre) {
   return matchesSearch(book, searchQuery) && matchesGenre(book, selectedGenre);
 }
 
-function parseDateValue(val) {
-  if (typeof val === 'number') return Number.isFinite(val) ? val : 0;
-  const num = Number(val);
-  if (Number.isFinite(num)) return num;
-  const parsed = Date.parse(String(val || ''));
+export function parseDateValue(val) {
+  if (val === null || val === undefined || val === '') return 0;
+  if (val instanceof Date) {
+    const t = val.getTime();
+    return Number.isFinite(t) ? t : 0;
+  }
+  if (typeof val === 'number') {
+    return Number.isFinite(val) ? val : 0;
+  }
+  const str = String(val).trim();
+  if (!str) return 0;
+  if (/^-?\d+(\.\d+)?$/.test(str)) {
+    const num = Number(str);
+    return Number.isFinite(num) ? num : 0;
+  }
+  const parsed = Date.parse(str);
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
@@ -110,8 +121,13 @@ function parseDateValue(val) {
  * Sort comparator for catalog books.
  * Supported modes: 'recent', 'title', 'author'.
  *
- * @param {{ id?: string; title?: string; author?: string; added?: number | string; year?: number | string }} a
- * @param {{ id?: string; title?: string; author?: string; added?: number | string; year?: number | string }} b
+ * In 'recent' mode:
+ * 1. Book publication year (year descending)
+ * 2. Book addition date (added / addedAt descending), or original photo date (photoDate / photo_date) if addition date is missing
+ * 3. Tie-breakers: title ascending, id ascending
+ *
+ * @param {{ id?: string; title?: string; author?: string; added?: number | string | Date; addedAt?: number | string | Date; photoDate?: number | string | Date; photo_date?: number | string | Date; year?: number | string }} a
+ * @param {{ id?: string; title?: string; author?: string; added?: number | string | Date; addedAt?: number | string | Date; photoDate?: number | string | Date; photo_date?: number | string | Date; year?: number | string }} b
  * @param {string} [sortMode='recent']
  * @returns {number}
  */
@@ -144,17 +160,26 @@ export function compareBooks(a, b, sortMode = 'recent') {
     return idA.localeCompare(idB);
   }
 
-  // "recent" mode: sort by date added descending (DESIGN.md 8.2), tie-breakers: year desc, title asc, id asc
-  const addedA = parseDateValue(a.added);
-  const addedB = parseDateValue(b.added);
-  if (addedB !== addedA) return addedB - addedA;
-
+  // "recent" mode:
+  // 1. Publication year descending (newer books first)
   const parsedYearA = typeof a.year === 'number' ? a.year : parseInt(String(a.year || 0), 10);
   const yearA = Number.isFinite(parsedYearA) ? parsedYearA : 0;
   const parsedYearB = typeof b.year === 'number' ? b.year : parseInt(String(b.year || 0), 10);
   const yearB = Number.isFinite(parsedYearB) ? parsedYearB : 0;
   if (yearB !== yearA) return yearB - yearA;
 
+  // 2. Date added descending; if no date added, fallback to original photo date descending
+  const addedA = parseDateValue(a.added ?? a.addedAt);
+  const photoDateA = parseDateValue(a.photoDate ?? a.photo_date ?? a.photoTimestamp);
+  const dateA = addedA || photoDateA;
+
+  const addedB = parseDateValue(b.added ?? b.addedAt);
+  const photoDateB = parseDateValue(b.photoDate ?? b.photo_date ?? b.photoTimestamp);
+  const dateB = addedB || photoDateB;
+
+  if (dateB !== dateA) return dateB - dateA;
+
+  // 3. Tie-breakers: title ascending, id ascending
   const titleDiff = titleA.localeCompare(titleB, 'ru', { sensitivity: 'accent' });
   if (titleDiff !== 0) return titleDiff;
   return idA.localeCompare(idB);

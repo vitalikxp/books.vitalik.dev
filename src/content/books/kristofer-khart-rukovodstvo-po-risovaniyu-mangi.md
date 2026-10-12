@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-110057-5"
 language: "ru"
 cover: "/covers/kristofer-khart-rukovodstvo-po-risovaniyu-mangi.jpg"
+photo: "IMG_2153.HEIC"
 genres:
   - "Рисование"
   - "Манга"

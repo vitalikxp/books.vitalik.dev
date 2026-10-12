@@ -6,6 +6,7 @@ publisher: "Fanzon / Эксмо"
 isbn: "978-5-699-91321-3"
 language: "ru"
 cover: "/covers/mayk-dzhonson-roberto-orsi-star-trek-pogruzhenie-vo-tmu.jpg"
+photo: "IMG_2265.HEIC"
 genres:
   - "Комиксы"
   - "Star Trek"

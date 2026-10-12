@@ -13,17 +13,29 @@ import {
   ChevronDown
 } from '@lucide/astro';
 import { compareBooks } from '../utils/catalog.js';
+import { getBookPhotoDate } from '../utils/photos.js';
 
 const allBooks = await getCollection('books');
 
-// Sort by date added descending by default (DESIGN.md 8.2), with year and title as tie-breakers
+// Precompute photo dates for books during build/SSR
+const bookPhotoDates = new Map(
+  allBooks.map((b) => [b.id, getBookPhotoDate(b)])
+);
+
+// Sort "Недавно" (recent):
+// 1. Year descending (publication year)
+// 2. Date added descending (if no added date, fallback to original photo date)
+// 3. Title ascending, then id ascending
 const sortedBooks = [...allBooks].sort((a, b) => {
+  const photoDateA = bookPhotoDates.get(a.id);
+  const photoDateB = bookPhotoDates.get(b.id);
   return compareBooks(
     {
       id: a.id,
       title: a.data.title.toLowerCase(),
       author: a.data.author.toLowerCase(),
       added: a.data.addedAt ? new Date(a.data.addedAt).getTime() : 0,
+      photoDate: photoDateA ? new Date(photoDateA).getTime() : 0,
       year: a.data.year || 0,
     },
     {
@@ -31,6 +43,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
       title: b.data.title.toLowerCase(),
       author: b.data.author.toLowerCase(),
       added: b.data.addedAt ? new Date(b.data.addedAt).getTime() : 0,
+      photoDate: photoDateB ? new Date(photoDateB).getTime() : 0,
       year: b.data.year || 0,
     },
     'recent'
@@ -162,7 +175,7 @@ const sortedBooks = [...allBooks].sort((a, b) => {
         class={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 sm:gap-x-8 xl:gap-x-12 gap-y-10 ${sortedBooks.length === 0 ? 'hidden' : ''}`}
       >
         {sortedBooks.map((book) => (
-          <BookCard book={book} />
+          <BookCard book={book} photoDate={bookPhotoDates.get(book.id)} />
         ))}
       </div>
 

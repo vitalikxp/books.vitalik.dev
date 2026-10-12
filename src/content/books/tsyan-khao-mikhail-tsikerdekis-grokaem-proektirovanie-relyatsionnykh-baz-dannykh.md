@@ -6,6 +6,7 @@ publisher: "Питер / Manning"
 isbn: "978-5-4461-2292-9"
 language: "ru"
 cover: "/covers/tsyan-khao-mikhail-tsikerdekis-grokaem-proektirovanie-relyatsionnykh-baz-dannykh.jpg"
+photo: "IMG_2194.HEIC"
 genres:
   - "Базы данных"
   - "SQL"

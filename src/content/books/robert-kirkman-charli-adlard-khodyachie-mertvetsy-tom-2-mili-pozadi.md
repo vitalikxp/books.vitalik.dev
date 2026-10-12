@@ -6,6 +6,7 @@ publisher: "Комильфо / Image Comics"
 isbn: "978-5-91339-452-1"
 language: "ru"
 cover: "/covers/robert-kirkman-charli-adlard-khodyachie-mertvetsy-tom-2-mili-pozadi.jpg"
+photo: "IMG_2268.HEIC"
 genres:
   - "Комиксы"
   - "Ходячие мертвецы"

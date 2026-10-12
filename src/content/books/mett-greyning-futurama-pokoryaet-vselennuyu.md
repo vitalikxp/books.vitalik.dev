@@ -6,6 +6,7 @@ publisher: "АСТ"
 isbn: "978-5-17-094356-2"
 language: "ru"
 cover: "/covers/mett-greyning-futurama-pokoryaet-vselennuyu.jpg"
+photo: "IMG_2262.HEIC"
 genres:
   - "Комиксы"
   - "Футурама"

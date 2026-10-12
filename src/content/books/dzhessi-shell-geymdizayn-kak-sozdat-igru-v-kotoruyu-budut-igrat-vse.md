@@ -6,6 +6,7 @@ publisher: "Альпина Паблишер"
 isbn: "978-5-9614-2244-3"
 language: "ru"
 cover: "/covers/dzhessi-shell-geymdizayn-kak-sozdat-igru-v-kotoruyu-budut-igrat-vse.jpg"
+photo: "IMG_2169.HEIC"
 genres:
   - "Геймдизайн"
   - "Геймдев"

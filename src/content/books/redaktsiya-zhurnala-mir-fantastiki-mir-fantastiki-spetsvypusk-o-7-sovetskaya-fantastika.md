@@ -5,6 +5,7 @@ year: 2021
 publisher: "Hobby World"
 language: "ru"
 cover: "/covers/redaktsiya-zhurnala-mir-fantastiki-mir-fantastiki-spetsvypusk-o-7-sovetskaya-fantastika.jpg"
+photo: "IMG_2229.HEIC"
 genres:
   - "Фантастика"
   - "Литература"

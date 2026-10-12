@@ -6,6 +6,7 @@ publisher: "Sprintbook / Packt"
 isbn: "978-5-97060-999-6"
 language: "ru"
 cover: "/covers/markos-romero-brenden-syueell-blueprints-vizualnyy-skripting-igr-v-unreal-engine-5.jpg"
+photo: "IMG_2164.HEIC"
 genres:
   - "Unreal Engine"
   - "Blueprints"

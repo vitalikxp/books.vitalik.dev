@@ -6,6 +6,7 @@ publisher: "ДМК Пресс"
 isbn: "978-5-97060-968-2"
 language: "ru"
 cover: "/covers/entoni-devis-trevis-batist-rassel-kreyg-rayan-stankel-razrabotka-3d-igr-v-unity.jpg"
+photo: "IMG_2172.HEIC"
 genres:
   - "Unity"
   - "3D-графика"

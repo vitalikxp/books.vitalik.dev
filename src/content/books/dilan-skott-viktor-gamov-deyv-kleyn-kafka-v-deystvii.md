@@ -7,6 +7,7 @@ isbn: "978-5-93700-118-4"
 language: "ru"
 pages: 310
 cover: "/covers/dilan-skott-viktor-gamov-deyv-kleyn-kafka-v-deystvii.jpg"
+photo: "IMG_2142.HEIC"
 genres:
   - "Apache Kafka"
   - "Распределенные системы"

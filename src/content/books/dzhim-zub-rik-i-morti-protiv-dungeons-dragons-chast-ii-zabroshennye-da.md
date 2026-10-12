@@ -6,6 +6,7 @@ publisher: "Комильфо"
 isbn: "978-5-91339-952-6"
 language: "ru"
 cover: "/covers/dzhim-zub-rik-i-morti-protiv-dungeons-dragons-chast-ii-zabroshennye-da.jpg"
+photo: "IMG_2253.HEIC"
 genres:
   - "Комиксы"
   - "Рик и Морти"

@@ -6,6 +6,7 @@ publisher: "Питер / Manning"
 isbn: "978-5-4461-2295-0"
 language: "ru"
 cover: "/covers/maurisio-aniche-prostoe-obektno-orientirovannoe-proektirovanie.jpg"
+photo: "IMG_2209.HEIC"
 genres:
   - "ООП"
   - "Архитектура"

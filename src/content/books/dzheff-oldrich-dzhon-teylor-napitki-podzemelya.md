@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-162987-8"
 language: "ru"
 cover: "/covers/dzheff-oldrich-dzhon-teylor-napitki-podzemelya.jpg"
+photo: "IMG_2258.HEIC"
 genres:
   - "Кулинария"
   - "Настольные ролевые игры"

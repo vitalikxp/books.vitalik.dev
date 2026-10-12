@@ -5,6 +5,7 @@ year: 2019
 publisher: "Студия 101"
 language: "ru"
 cover: "/covers/anastasiya-gasteva-mutanty-tochka-otschyota-putevoditel-po-zone-mramornye-bolot.jpg"
+photo: "IMG_2239.HEIC"
 genres:
   - "Настольные ролевые игры"
   - "Мутанты"

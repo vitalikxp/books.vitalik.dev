@@ -6,6 +6,7 @@ publisher: "Hobby World / Paizo"
 isbn: "978-5-91996-189-5"
 language: "ru"
 cover: "/covers/dzheyms-dzheykobs-pathfinder-vozvrashchenie-runnykh-vlastiteley-yubileynoe-izd.jpg"
+photo: "IMG_2233.HEIC"
 genres:
   - "Настольные ролевые игры"
   - "Pathfinder"

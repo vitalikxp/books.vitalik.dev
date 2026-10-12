@@ -6,6 +6,7 @@ publisher: "Питер"
 isbn: "978-5-4461-2007-9"
 language: "ru"
 cover: "/covers/dzhozef-khoking-unity-v-deystvii-multiplatformennaya-razrabotka-na-c.jpg"
+photo: "IMG_2160.HEIC"
 genres:
   - "Unity"
   - "C#"

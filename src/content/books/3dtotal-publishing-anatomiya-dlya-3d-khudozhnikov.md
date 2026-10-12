@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-112347-5"
 language: "ru"
 cover: "/covers/3dtotal-publishing-anatomiya-dlya-3d-khudozhnikov.jpg"
+photo: "IMG_2158.HEIC"
 genres:
   - "3D-графика"
   - "Анатомия"

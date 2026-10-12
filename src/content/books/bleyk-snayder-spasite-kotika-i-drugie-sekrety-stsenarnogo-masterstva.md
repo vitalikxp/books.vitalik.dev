@@ -6,6 +6,7 @@ publisher: "МИФ"
 isbn: "978-5-00169-270-6"
 language: "ru"
 cover: "/covers/bleyk-snayder-spasite-kotika-i-drugie-sekrety-stsenarnogo-masterstva.jpg"
+photo: "IMG_2225.HEIC"
 genres:
   - "Сценарное мастерство"
   - "Кино"

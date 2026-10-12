@@ -6,6 +6,7 @@ publisher: "Hobby World / Paizo"
 isbn: "978-5-91996-081-2"
 language: "ru"
 cover: "/covers/dzheyson-bulman-pathfinder-nastolnaya-rolevaya-igra-osnovnaya-kniga-pravil.jpg"
+photo: "IMG_2231.HEIC"
 genres:
   - "Настольные ролевые игры"
   - "Pathfinder"

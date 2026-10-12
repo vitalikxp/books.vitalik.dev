@@ -6,6 +6,7 @@ publisher: "Вильямс"
 isbn: "978-5-8459-2035-5"
 language: "ru"
 cover: "/covers/von-vernon-realizatsiya-metodov-predmetno-orientirovannogo-proektirovan.jpg"
+photo: "IMG_2145.HEIC"
 genres:
   - "Архитектура"
   - "DDD"

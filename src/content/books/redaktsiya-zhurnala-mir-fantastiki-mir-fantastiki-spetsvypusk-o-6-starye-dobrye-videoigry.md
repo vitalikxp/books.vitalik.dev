@@ -5,6 +5,7 @@ year: 2021
 publisher: "Hobby World"
 language: "ru"
 cover: "/covers/redaktsiya-zhurnala-mir-fantastiki-mir-fantastiki-spetsvypusk-o-6-starye-dobrye-videoigry.jpg"
+photo: "IMG_2228.HEIC"
 genres:
   - "Видеоигры"
   - "История игр"

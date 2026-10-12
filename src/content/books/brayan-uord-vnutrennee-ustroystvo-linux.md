@@ -6,6 +6,7 @@ publisher: "Питер / No Starch Press"
 isbn: "978-5-4461-1828-1"
 language: "ru"
 cover: "/covers/brayan-uord-vnutrennee-ustroystvo-linux.jpg"
+photo: "IMG_2201.HEIC"
 genres:
   - "Linux"
   - "Операционные системы"

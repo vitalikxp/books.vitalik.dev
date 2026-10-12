@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-099411-3"
 language: "ru"
 cover: "/covers/skott-rodzhers-level-up-rukovodstvo-po-sozdaniyu-klassnykh-videoigr.jpg"
+photo: "IMG_2170.HEIC"
 genres:
   - "Геймдизайн"
   - "Геймдев"

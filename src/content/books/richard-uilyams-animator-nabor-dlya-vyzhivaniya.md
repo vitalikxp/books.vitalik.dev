@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-699-98694-1"
 language: "ru"
 cover: "/covers/richard-uilyams-animator-nabor-dlya-vyzhivaniya.jpg"
+photo: "IMG_2159.HEIC"
 genres:
   - "Анимация"
   - "Искусство"

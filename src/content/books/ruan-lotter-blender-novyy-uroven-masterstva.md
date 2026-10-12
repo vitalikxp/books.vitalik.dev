@@ -6,6 +6,7 @@ publisher: "ДМК Пресс"
 isbn: "978-5-97060-979-8"
 language: "ru"
 cover: "/covers/ruan-lotter-blender-novyy-uroven-masterstva.jpg"
+photo: "IMG_2182.HEIC"
 genres:
   - "Blender"
   - "3D-графика"

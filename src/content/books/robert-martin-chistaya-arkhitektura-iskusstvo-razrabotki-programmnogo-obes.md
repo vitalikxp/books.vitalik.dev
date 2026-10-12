@@ -6,6 +6,7 @@ publisher: "Питер"
 isbn: "978-5-4461-0772-8"
 language: "ru"
 cover: "/covers/robert-martin-chistaya-arkhitektura-iskusstvo-razrabotki-programmnogo-obes.jpg"
+photo: "IMG_2197.HEIC"
 genres:
   - "Архитектура"
   - "Программирование"

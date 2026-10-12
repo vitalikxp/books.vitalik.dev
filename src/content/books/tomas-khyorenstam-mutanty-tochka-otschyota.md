@@ -6,6 +6,7 @@ publisher: "Студия 101 / Free League"
 isbn: "978-5-9907449-7-4"
 language: "ru"
 cover: "/covers/tomas-khyorenstam-mutanty-tochka-otschyota.jpg"
+photo: "IMG_2238.HEIC"
 genres:
   - "Настольные ролевые игры"
   - "Мутанты"

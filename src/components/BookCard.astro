@@ -5,10 +5,13 @@ import { cleanIsbn } from '../utils/catalog.js';
 
 interface Props {
   book: CollectionEntry<'books'>;
+  photoDate?: Date | number | string | null;
 }
 
-const { book } = Astro.props;
+const { book, photoDate } = Astro.props;
 const data = book.data;
+const addedTimestamp = data.addedAt ? new Date(data.addedAt).getTime() : '';
+const photoTimestamp = photoDate ? new Date(photoDate).getTime() : '';
 ---
 
 <article 
@@ -18,7 +21,8 @@ const data = book.data;
   data-author={data.author.toLowerCase()}
   data-isbn={cleanIsbn(data.isbn)}
   data-genres={JSON.stringify(data.genres.map((g: string) => g.toLowerCase()))}
-  data-added={new Date(data.addedAt).getTime()}
+  data-added={addedTimestamp}
+  data-photo-date={photoTimestamp}
   data-year={data.year || 0}
 >
   <!-- Book Cover Container: Ratio 55/78, max-h 312px, aligned bottom, soft shadow -->

@@ -6,6 +6,7 @@ publisher: "Питер"
 isbn: "978-5-4461-1550-1"
 language: "ru"
 cover: "/covers/boris-chernyy-professionalnyy-typescript-razrabotka-masshtabiruemykh-javas.jpg"
+photo: "IMG_2148.HEIC"
 genres:
   - "TypeScript"
   - "JavaScript"

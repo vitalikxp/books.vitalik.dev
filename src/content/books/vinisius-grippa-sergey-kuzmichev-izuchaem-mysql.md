@@ -7,6 +7,7 @@ isbn: "978-5-9775-1772-0"
 language: "ru"
 pages: 624
 cover: "/covers/vinisius-grippa-sergey-kuzmichev-izuchaem-mysql.jpg"
+photo: "IMG_2139.HEIC"
 genres:
   - "Базы данных"
   - "MySQL"

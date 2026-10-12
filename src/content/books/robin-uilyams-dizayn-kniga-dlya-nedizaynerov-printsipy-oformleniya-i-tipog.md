@@ -7,6 +7,7 @@ isbn: "978-5-4461-1127-5"
 language: "ru"
 pages: 240
 cover: "/covers/robin-uilyams-dizayn-kniga-dlya-nedizaynerov-printsipy-oformleniya-i-tipog.jpg"
+photo: "IMG_2136.HEIC"
 genres:
   - "Дизайн"
   - "Типографика"

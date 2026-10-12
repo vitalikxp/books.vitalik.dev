@@ -7,6 +7,7 @@ isbn: "978-5-4461-0587-8"
 language: "ru"
 pages: 224
 cover: "/covers/vladston-ferreyra-filo-teoreticheskiy-minimum-po-computer-science-vse-chto-nuzhno-p.jpg"
+photo: "IMG_2135.HEIC"
 genres:
   - "Программирование"
   - "Computer Science"

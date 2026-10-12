@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-162986-1"
 language: "ru"
 cover: "/covers/rayan-nort-kak-zakhvatit-vselennuyu-podchini-mir-svoim-interesam.jpg"
+photo: "IMG_2212.HEIC"
 genres:
   - "Нон-фикшн"
   - "Популярная наука"

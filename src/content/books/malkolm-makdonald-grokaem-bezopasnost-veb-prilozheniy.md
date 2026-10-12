@@ -6,6 +6,7 @@ publisher: "Питер / Manning"
 isbn: "978-5-4461-1773-4"
 language: "ru"
 cover: "/covers/malkolm-makdonald-grokaem-bezopasnost-veb-prilozheniy.jpg"
+photo: "IMG_2203.HEIC"
 genres:
   - "Информационная безопасность"
   - "Веб-разработка"

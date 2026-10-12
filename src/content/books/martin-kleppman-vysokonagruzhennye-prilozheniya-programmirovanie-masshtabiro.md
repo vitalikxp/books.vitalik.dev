@@ -6,6 +6,7 @@ publisher: "Питер / O'Reilly"
 isbn: "978-5-4461-0570-0"
 language: "ru"
 cover: "/covers/martin-kleppman-vysokonagruzhennye-prilozheniya-programmirovanie-masshtabiro.jpg"
+photo: "IMG_2199.HEIC"
 genres:
   - "Архитектура"
   - "Базы данных"

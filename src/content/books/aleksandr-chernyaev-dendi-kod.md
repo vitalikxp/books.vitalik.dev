@@ -5,6 +5,7 @@ year: 2023
 publisher: "Издательские решения"
 language: "ru"
 cover: "/covers/aleksandr-chernyaev-dendi-kod.jpg"
+photo: "IMG_2208.HEIC"
 genres:
   - "Программирование"
   - "Чистый код"

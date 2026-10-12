@@ -6,6 +6,7 @@ publisher: "АСТ / RED"
 isbn: "978-5-17-109405-8"
 language: "ru"
 cover: "/covers/ernesto-che-gevara-dnevnik-mototsiklista.jpg"
+photo: "IMG_2193.HEIC"
 genres:
   - "Мемуары"
   - "Путешествия"

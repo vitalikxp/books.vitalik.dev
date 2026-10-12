@@ -6,6 +6,7 @@ publisher: "Питер"
 isbn: "978-5-4461-1984-4"
 language: "ru"
 cover: "/covers/dzhey-dzhey-givaks-patterny-proektirovaniya-api.jpg"
+photo: "IMG_2143.HEIC"
 genres:
   - "Архитектура"
   - "Программирование"

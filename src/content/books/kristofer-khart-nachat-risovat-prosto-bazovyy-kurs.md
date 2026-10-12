@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-118944-0"
 language: "ru"
 cover: "/covers/kristofer-khart-nachat-risovat-prosto-bazovyy-kurs.jpg"
+photo: "IMG_2156.HEIC"
 genres:
   - "Рисование"
   - "Искусство"

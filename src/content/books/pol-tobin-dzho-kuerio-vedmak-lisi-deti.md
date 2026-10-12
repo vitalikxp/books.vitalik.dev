@@ -6,6 +6,7 @@ publisher: "Белый Единорог / Dark Horse"
 isbn: "978-5-905672-97-2"
 language: "ru"
 cover: "/covers/pol-tobin-dzho-kuerio-vedmak-lisi-deti.jpg"
+photo: "IMG_2181.HEIC"
 genres:
   - "Комиксы"
   - "Фэнтези"

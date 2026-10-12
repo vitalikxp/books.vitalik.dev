@@ -6,6 +6,7 @@ publisher: "Вильямс"
 isbn: "978-5-8459-1678-5"
 language: "ru"
 cover: "/covers/erik-evans-predmetno-orientirovannoe-proektirovanie-strukturizatsiya-sl.jpg"
+photo: "IMG_2144.HEIC"
 genres:
   - "Архитектура"
   - "DDD"

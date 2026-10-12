@@ -6,6 +6,7 @@ publisher: "Альпака"
 isbn: "978-5-907424-23-4"
 language: "ru"
 cover: "/covers/tristan-rulo-dimitri-arman-perevozchik.jpg"
+photo: "IMG_2222.HEIC"
 genres:
   - "Комиксы"
   - "Франко-бельгийский комикс"

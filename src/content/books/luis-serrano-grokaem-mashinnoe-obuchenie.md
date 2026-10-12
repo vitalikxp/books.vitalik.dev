@@ -6,6 +6,7 @@ publisher: "Питер / Manning"
 isbn: "978-5-4461-1823-6"
 language: "ru"
 cover: "/covers/luis-serrano-grokaem-mashinnoe-obuchenie.jpg"
+photo: "IMG_2188.HEIC"
 genres:
   - "Машинное обучение"
   - "Искусственный интеллект"

@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-118843-6"
 language: "ru"
 cover: "/covers/dzhessika-broudi-spasite-kotika-vsyo-chto-nuzhno-dlya-napisaniya-romana.jpg"
+photo: "IMG_2226.HEIC"
 genres:
   - "Писательское мастерство"
   - "Литература"

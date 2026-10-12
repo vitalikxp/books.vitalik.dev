@@ -6,6 +6,7 @@ publisher: "ДМК Пресс / Packt"
 isbn: "978-5-97060-928-6"
 language: "ru"
 cover: "/covers/kharrison-ferrone-izuchaem-c-cherez-razrabotku-igr-na-unity.jpg"
+photo: "IMG_2171.HEIC"
 genres:
   - "Unity"
   - "C#"

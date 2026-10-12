@@ -496,12 +496,15 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
 
     lang_val = str(book_info.get('language') or 'ru').strip() or 'ru'
 
+    photo_file = Path(photo_path).name if photo_path else ""
+    photo_str = f"photo: {json.dumps(photo_file, ensure_ascii=False)}\n" if photo_file else ""
+
     content = f"""---
 title: {json.dumps(final_title, ensure_ascii=False)}
 author: {json.dumps(final_author, ensure_ascii=False)}
 {year_str}{pub_str}{isbn_str}language: {json.dumps(lang_val, ensure_ascii=False)}
 {pages_str}cover: {json.dumps(cover_rel_path, ensure_ascii=False)}
-{genres_yaml}status: {json.dumps(final_status, ensure_ascii=False)}
+{photo_str}{genres_yaml}status: {json.dumps(final_status, ensure_ascii=False)}
 {loan_str}{room_str}{shelf_str}{rating_str}addedAt: {date.today().isoformat()}
 ---
 

@@ -6,6 +6,7 @@ publisher: "Комильфо / Oni Press"
 isbn: "978-5-91339-444-6"
 language: "ru"
 cover: "/covers/zak-gorman-dzhastin-royland-den-kharmon-rik-i-morti-kniga-1.jpg"
+photo: "IMG_2250.HEIC"
 genres:
   - "Комиксы"
   - "Рик и Морти"

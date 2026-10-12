@@ -6,6 +6,7 @@ publisher: "АСТ / IDW"
 isbn: "978-5-17-101188-8"
 language: "ru"
 cover: "/covers/dzhim-zub-dungeons-dragons-legendy-vrat-baldura.jpg"
+photo: "IMG_2256.HEIC"
 genres:
   - "Комиксы"
   - "Dungeons & Dragons"

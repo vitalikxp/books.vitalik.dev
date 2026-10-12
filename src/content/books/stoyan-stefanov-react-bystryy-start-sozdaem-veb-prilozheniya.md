@@ -6,6 +6,7 @@ publisher: "Питер"
 isbn: "978-5-4461-2094-9"
 language: "ru"
 cover: "/covers/stoyan-stefanov-react-bystryy-start-sozdaem-veb-prilozheniya.jpg"
+photo: "IMG_2150.HEIC"
 genres:
   - "React"
   - "JavaScript"

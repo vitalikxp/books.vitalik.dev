@@ -6,6 +6,7 @@ publisher: "Комильфо / Image Comics"
 isbn: "978-5-91339-451-4"
 language: "ru"
 cover: "/covers/robert-kirkman-toni-mur-khodyachie-mertvetsy-tom-1-dni-minuvshie.jpg"
+photo: "IMG_2267.HEIC"
 genres:
   - "Комиксы"
   - "Ходячие мертвецы"

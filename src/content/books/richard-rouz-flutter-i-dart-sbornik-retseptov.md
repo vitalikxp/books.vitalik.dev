@@ -6,6 +6,7 @@ publisher: "БХВ / O'Reilly"
 isbn: "978-5-9775-1882-6"
 language: "ru"
 cover: "/covers/richard-rouz-flutter-i-dart-sbornik-retseptov.jpg"
+photo: "IMG_2191.HEIC"
 genres:
   - "Flutter"
   - "Dart"

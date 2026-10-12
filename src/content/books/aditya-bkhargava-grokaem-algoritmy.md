@@ -6,6 +6,7 @@ publisher: "Питер"
 isbn: "978-5-4461-0923-4"
 language: "ru"
 cover: "/covers/aditya-bkhargava-grokaem-algoritmy.jpg"
+photo: "IMG_2177.HEIC"
 genres:
   - "Алгоритмы"
   - "Computer Science"

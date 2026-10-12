@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-180806-8"
 language: "ru"
 cover: "/covers/red-right-hand-publishing-pikseli-kurs-po-pikselnoy-grafike-i-animatsii-dlya-novichkov.jpg"
+photo: "IMG_2184.HEIC"
 genres:
   - "Пиксель-арт"
   - "Анимация"

@@ -6,6 +6,7 @@ publisher: "Комильфо / Dark Horse"
 isbn: "978-5-91339-723-2"
 language: "ru"
 cover: "/covers/dzheyms-sitsiliano-dzhastin-royland-den-kharmon-rick-and-morty-artbuk.jpg"
+photo: "IMG_2249.HEIC"
 genres:
   - "Артбуки"
   - "Рик и Морти"

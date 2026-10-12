@@ -6,6 +6,7 @@ publisher: "Комильфо / Oni Press"
 isbn: "978-5-91339-563-4"
 language: "ru"
 cover: "/covers/kayl-starks-zak-gorman-dzhastin-royland-den-kharmon-rik-i-morti-kniga-2-nuzhno-bolshe-priklyucheniy.jpg"
+photo: "IMG_2251.HEIC"
 genres:
   - "Комиксы"
   - "Рик и Морти"

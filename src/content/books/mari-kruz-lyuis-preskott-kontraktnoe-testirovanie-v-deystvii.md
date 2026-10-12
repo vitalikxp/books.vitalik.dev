@@ -6,6 +6,7 @@ publisher: "ДМК Пресс / Manning"
 isbn: "978-5-97060-984-2"
 language: "ru"
 cover: "/covers/mari-kruz-lyuis-preskott-kontraktnoe-testirovanie-v-deystvii.jpg"
+photo: "IMG_2216.HEIC"
 genres:
   - "Тестирование"
   - "Микросервисы"

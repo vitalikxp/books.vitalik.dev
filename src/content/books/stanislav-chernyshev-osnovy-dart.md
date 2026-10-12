@@ -6,6 +6,7 @@ publisher: "Питер"
 isbn: "978-5-4461-2373-5"
 language: "ru"
 cover: "/covers/stanislav-chernyshev-osnovy-dart.jpg"
+photo: "IMG_2190.HEIC"
 genres:
   - "Dart"
   - "Программирование"

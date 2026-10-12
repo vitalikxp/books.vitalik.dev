@@ -6,6 +6,7 @@ publisher: "Sprintbook / Packt"
 isbn: "978-5-97060-993-4"
 language: "ru"
 cover: "/covers/kharrison-ferrone-patterny-proektirovaniya-unity.jpg"
+photo: "IMG_2174.HEIC"
 genres:
   - "Unity"
   - "C#"

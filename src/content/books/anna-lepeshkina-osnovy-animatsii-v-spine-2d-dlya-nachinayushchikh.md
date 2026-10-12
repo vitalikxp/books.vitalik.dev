@@ -6,6 +6,7 @@ publisher: "Бомбора"
 isbn: "978-5-04-164741-4"
 language: "ru"
 cover: "/covers/anna-lepeshkina-osnovy-animatsii-v-spine-2d-dlya-nachinayushchikh.jpg"
+photo: "IMG_2157.HEIC"
 genres:
   - "Анимация"
   - "Геймдев"
