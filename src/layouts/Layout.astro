@@ -182,6 +182,8 @@ const genres = Array.from(genreMap.values())
       let escapeKeyListener: ((e: KeyboardEvent) => void) | null = null;
       let mediaQueryList: MediaQueryList | null = null;
       let mediaQueryListener: ((e: MediaQueryListEvent) => void) | null = null;
+      let storageListener: ((e: StorageEvent) => void) | null = null;
+      let pageShowListener: ((e: PageTransitionEvent) => void) | null = null;
 
       function initLayout() {
         document.body.style.overflow = '';
@@ -344,6 +346,35 @@ const genres = Array.from(genreMap.values())
             }
           });
         });
+
+        // Multi-tab and BFCache theme synchronization
+        if (storageListener) {
+          window.removeEventListener('storage', storageListener);
+          storageListener = null;
+        }
+        storageListener = (e: StorageEvent) => {
+          if (e.key === 'my-library.theme' && e.newValue) {
+            applyThemePreference(e.newValue);
+          }
+        };
+        window.addEventListener('storage', storageListener);
+
+        if (pageShowListener) {
+          window.removeEventListener('pageshow', pageShowListener);
+          pageShowListener = null;
+        }
+        pageShowListener = (e: PageTransitionEvent) => {
+          if (e.persisted) {
+            try {
+              const saved = localStorage.getItem('my-library.theme');
+              const currentPref = document.documentElement.dataset.themePreference;
+              if (saved && saved !== currentPref) {
+                applyThemePreference(saved);
+              }
+            } catch {}
+          }
+        };
+        window.addEventListener('pageshow', pageShowListener);
       }
 
       // Teardown before page swap
@@ -360,6 +391,14 @@ const genres = Array.from(genreMap.values())
           mediaQueryList.removeEventListener('change', mediaQueryListener);
           mediaQueryList = null;
           mediaQueryListener = null;
+        }
+        if (storageListener) {
+          window.removeEventListener('storage', storageListener);
+          storageListener = null;
+        }
+        if (pageShowListener) {
+          window.removeEventListener('pageshow', pageShowListener);
+          pageShowListener = null;
         }
         if (closeDrawerTimeout) {
           clearTimeout(closeDrawerTimeout);

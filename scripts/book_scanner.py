@@ -13,6 +13,7 @@ import re
 import shutil
 import sys
 import unicodedata
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import date
@@ -57,18 +58,45 @@ def slugify(text: str) -> str:
     final_slug = slug[:60].rstrip('-')
     return final_slug if final_slug else "book"
 
+RATE_LIMIT_HIT = False
+LAST_HTTP_STATUS = None
+
 def fetch_json(url: str):
+    global RATE_LIMIT_HIT, LAST_HTTP_STATUS
     if not url or not isinstance(url, str) or not url.strip():
         return None
     clean_url = url.strip()
+    try:
+        parsed = urllib.parse.urlparse(clean_url)
+        if parsed.scheme.lower() not in ('http', 'https') or not parsed.netloc:
+            print(f"[!] Некорректный или неподдерживаемый URL: {clean_url}", file=sys.stderr)
+            return None
+    except Exception as e:
+        print(f"[!] Ошибка разбора URL {clean_url}: {e}", file=sys.stderr)
+        return None
+
     headers = {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
     try:
         req = urllib.request.Request(clean_url, headers=headers)
         with urllib.request.urlopen(req, timeout=10) as resp:
+            LAST_HTTP_STATUS = getattr(resp, 'status', 200)
             return json.loads(resp.read().decode('utf-8'))
+    except urllib.error.HTTPError as e:
+        LAST_HTTP_STATUS = e.code
+        if e.code == 429:
+            RATE_LIMIT_HIT = True
+            print("[!] Google Books API вернул 429 (Too Many Requests / лимит запросов исчерпан).", file=sys.stderr)
+        else:
+            print(f"[!] Ошибка запроса к {clean_url}: {e}", file=sys.stderr)
+        try:
+            e.close()
+        except Exception:
+            pass
+        return None
     except Exception as e:
+        LAST_HTTP_STATUS = None
         print(f"[!] Ошибка запроса к {clean_url}: {e}", file=sys.stderr)
         return None
 
@@ -98,6 +126,15 @@ def download_image(url: str, dest_path: Path) -> bool:
     if not url or not isinstance(url, str) or not url.strip():
         return False
     clean_url = url.strip()
+    try:
+        parsed = urllib.parse.urlparse(clean_url)
+        if parsed.scheme.lower() not in ('http', 'https') or not parsed.netloc:
+            print(f"[!] Некорректный или неподдерживаемый URL обложки: {clean_url}", file=sys.stderr)
+            return False
+    except Exception as e:
+        print(f"[!] Ошибка разбора URL обложки {clean_url}: {e}", file=sys.stderr)
+        return False
+
     headers = {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
@@ -173,12 +210,21 @@ def search_google_books(query: str, isbn: str = None):
     # Extract cover URL
     raw_images = info.get('imageLinks')
     image_links = raw_images if isinstance(raw_images, dict) else {}
-    cover_url = image_links.get('extraLarge') or image_links.get('large') or image_links.get('medium') or image_links.get('thumbnail') or image_links.get('smallThumbnail')
-    if cover_url and isinstance(cover_url, str):
-        cover_url = cover_url.replace('http://', 'https://')
-        cover_url = re.sub(r'&edge=curl', '', cover_url)
-        # Attempt to upgrade zoom if possible
-        cover_url = re.sub(r'&zoom=\d', '&zoom=2', cover_url)
+    orig_cover_url = image_links.get('extraLarge') or image_links.get('large') or image_links.get('medium') or image_links.get('thumbnail') or image_links.get('smallThumbnail')
+    cover_url = None
+    fallback_cover_url = None
+    if orig_cover_url and isinstance(orig_cover_url, str):
+        cleaned_url = orig_cover_url.replace('http://', 'https://')
+        cleaned_url = re.sub(r'&edge=curl', '', cleaned_url)
+        fallback_cover_url = cleaned_url
+        if '&zoom=' in cleaned_url:
+            upgraded = re.sub(r'&zoom=\d', '&zoom=2', cleaned_url)
+            cover_url = upgraded
+            if upgraded == cleaned_url:
+                fallback_cover_url = None
+        else:
+            cover_url = cleaned_url
+            fallback_cover_url = None
     else:
         cover_url = None
 
@@ -204,6 +250,7 @@ def search_google_books(query: str, isbn: str = None):
         'language': info.get('language', 'ru') if isinstance(info.get('language'), str) else 'ru',
         'description': str(info.get('description') or ''),
         'cover_url': cover_url,
+        'fallback_cover_url': fallback_cover_url,
     }
 
 def search_open_library(query: str, isbn: str = None):
@@ -258,18 +305,29 @@ def search_open_library(query: str, isbn: str = None):
         'language': lang,
         'description': '',
         'cover_url': cover_url,
+        'fallback_cover_url': None,
     }
 
 def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
              status: str = "read", rating: int = None, photo_path: str = None,
              custom_cover: str = None, year: int = None, publisher: str = None,
              pages: int = None, genres: list = None, description: str = None,
+             room: str = None, shelf: str = None, loan: str = None,
              force: bool = False):
+    global RATE_LIMIT_HIT, LAST_HTTP_STATUS
+    RATE_LIMIT_HIT = False
+    LAST_HTTP_STATUS = None
+
     search_q = (query or "").strip() or f"{author} {title}".strip()
     book_info = None
 
+    has_explicit_title_author = bool(
+        title and isinstance(title, str) and title.strip() and
+        author and isinstance(author, str) and author.strip()
+    )
+
     # If title and author are not fully given or search requested, try online APIs
-    should_search = bool(query or isbn or not (title and author and custom_cover and year))
+    should_search = bool(query or isbn or not (has_explicit_title_author and custom_cover and year))
     if should_search:
         if not search_q and not isbn:
             print("[!] Укажите название, автора или ISBN для поиска.")
@@ -281,10 +339,26 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
             print("[*] Поиск в Google Books не дал результатов, пробуем Open Library...")
             book_info = search_open_library(search_q, isbn=isbn)
 
+        if not book_info and RATE_LIMIT_HIT:
+            print(
+                "[!] Google Books API вернул 429 (Too Many Requests / лимит запросов исчерпан). "
+                "Согласно AGENTS.md, передавайте метаданные и URL обложки напрямую аргументами (-t, -a, -c, -y) "
+                "или используйте веб-поиск.",
+                file=sys.stderr
+            )
+
     if not book_info:
+        if not has_explicit_title_author:
+            print(
+                f"[!] Не удалось найти информацию о книге «{search_q or isbn}» в онлайн-поиске, "
+                f"а название и автор не были указаны явно. Запись не создана.",
+                file=sys.stderr
+            )
+            return False
+
         book_info = {
-            'title': title or search_q or 'Без названия',
-            'author': author or 'Неизвестный автор',
+            'title': str(title).strip(),
+            'author': str(author).strip(),
             'year': year,
             'publisher': publisher or '',
             'isbn': isbn or '',
@@ -292,7 +366,8 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
             'genres': genres or [],
             'language': 'ru',
             'description': description or '',
-            'cover_url': custom_cover
+            'cover_url': custom_cover,
+            'fallback_cover_url': None,
         }
     else:
         # Override with explicit values if provided
@@ -314,6 +389,7 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
             book_info['description'] = description
         if custom_cover:
             book_info['cover_url'] = custom_cover
+            book_info['fallback_cover_url'] = None
 
     final_title = (book_info.get('title') or title or search_q or 'Без названия').strip()
     if not final_title:
@@ -333,16 +409,33 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
     # Determine cover
     cover_rel_path = "/covers/default-book.svg"
     cover_target = COVERS_DIR / f"{slug}.jpg"
+    cover_downloaded = False
 
     cover_to_download = book_info.get('cover_url')
+    fallback_cover = book_info.get('fallback_cover_url')
     if cover_to_download:
         if cover_to_download.startswith('/covers/') or cover_to_download.startswith('covers/'):
             cover_rel_path = cover_to_download if cover_to_download.startswith('/') else f"/{cover_to_download}"
+            cover_downloaded = True
         else:
             print(f"[*] Скачивание обложки: {cover_to_download}...")
             if download_image(cover_to_download, cover_target):
                 cover_rel_path = f"/covers/{slug}.jpg"
+                cover_downloaded = True
                 print(f"[✓] Обложка сохранена в {cover_rel_path}")
+            elif fallback_cover and fallback_cover != cover_to_download:
+                print(f"[*] Основная обложка недоступна, пробуем запасной URL: {fallback_cover}...")
+                if download_image(fallback_cover, cover_target):
+                    cover_rel_path = f"/covers/{slug}.jpg"
+                    cover_downloaded = True
+                    print(f"[✓] Запасная обложка сохранена в {cover_rel_path}")
+
+    if not cover_downloaded:
+        if not custom_cover and cover_target.exists():
+            cover_rel_path = f"/covers/{slug}.jpg"
+            print(f"[*] Сохранена существующая обложка: {cover_rel_path}")
+        else:
+            cover_rel_path = "/covers/default-book.svg"
 
     # Generate Markdown file
     BOOKS_DIR.mkdir(parents=True, exist_ok=True)
@@ -353,6 +446,9 @@ def add_book(query: str = "", title: str = "", author: str = "", isbn: str = "",
     isbn_str = f'isbn: {json.dumps(book_info["isbn"], ensure_ascii=False)}\n' if book_info.get('isbn') else ""
     pages_val = book_info.get('pages')
     pages_str = f"pages: {int(pages_val)}\n" if isinstance(pages_val, (int, str)) and str(pages_val).isdigit() else ""
+    room_str = f'room: {json.dumps(str(room).strip(), ensure_ascii=False)}\n' if room and str(room).strip() else ""
+    shelf_str = f'shelf: {json.dumps(str(shelf).strip(), ensure_ascii=False)}\n' if shelf and str(shelf).strip() else ""
+    loan_str = f'loan: {json.dumps(str(loan).strip(), ensure_ascii=False)}\n' if loan and str(loan).strip() else ""
     rating_str = f"rating: {rating}\n" if rating else ""
     genres_raw = book_info.get('genres') or []
     genres_list = [str(g).strip() for g in genres_raw if g and str(g).strip()]
@@ -370,7 +466,7 @@ author: {json.dumps(final_author, ensure_ascii=False)}
 {year_str}{pub_str}{isbn_str}language: {json.dumps(book_info.get('language') or 'ru', ensure_ascii=False)}
 {pages_str}cover: {json.dumps(cover_rel_path, ensure_ascii=False)}
 {genres_yaml}status: {json.dumps(status, ensure_ascii=False)}
-{rating_str}addedAt: {date.today().isoformat()}
+{loan_str}{room_str}{shelf_str}{rating_str}addedAt: {date.today().isoformat()}
 ---
 
 {desc}
@@ -445,11 +541,14 @@ def main():
     parser.add_argument("-r", "--rating", type=int, choices=[1, 2, 3, 4, 5], help="Оценка от 1 до 5")
     parser.add_argument("-p", "--photo", help="Путь к файлу фотографии из incoming_photos/")
     parser.add_argument("-c", "--cover", help="Прямой URL качественной обложки")
+    parser.add_argument("--room", help="Комната (например 'Гостиная', 'Кабинет', 'Спальня')")
+    parser.add_argument("--shelf", help="Полка (например 'полка 1', 'полка 2')")
+    parser.add_argument("--loan", help="Кому отдана книга (например 'Анна')")
     parser.add_argument("-f", "--force", action="store_true", help="Перезаписать существующую запись книги")
 
     args = parser.parse_args()
 
-    if not (args.query or args.title or args.isbn):
+    if not (args.query or args.title or args.isbn or args.author):
         parser.print_help()
         sys.exit(1)
 
@@ -467,6 +566,9 @@ def main():
         pages=args.pages,
         genres=args.genres or [],
         description=args.desc or "",
+        room=args.room,
+        shelf=args.shelf,
+        loan=args.loan,
         force=args.force
     )
     if not success:

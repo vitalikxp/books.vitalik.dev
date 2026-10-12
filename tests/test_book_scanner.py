@@ -7,6 +7,7 @@ import io
 import sys
 import tempfile
 import unittest
+import urllib.error
 from datetime import date
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -209,6 +210,54 @@ class TestFetchJson(unittest.TestCase):
         self.assertIsNone(fetch_json(123))
         self.assertIsNone(fetch_json("not-a-valid-url"))
 
+    def test_fetch_json_rejects_file_scheme(self):
+        with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+            result = fetch_json("file:///etc/passwd")
+        self.assertIsNone(result)
+        self.assertIn("Некорректный или неподдерживаемый URL: file:///etc/passwd", mock_stderr.getvalue())
+
+    @patch("urllib.request.urlopen")
+    def test_fetch_json_429_logs_and_sets_rate_limit_flag(self, mock_urlopen):
+        import scripts.book_scanner
+        scripts.book_scanner.RATE_LIMIT_HIT = False
+        scripts.book_scanner.LAST_HTTP_STATUS = None
+
+        mock_urlopen.side_effect = urllib.error.HTTPError(
+            url="https://example.com/api/test",
+            code=429,
+            msg="Too Many Requests",
+            hdrs={},
+            fp=None
+        )
+
+        with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+            result = fetch_json("https://example.com/api/test")
+
+        self.assertIsNone(result)
+        self.assertTrue(scripts.book_scanner.RATE_LIMIT_HIT)
+        self.assertEqual(scripts.book_scanner.LAST_HTTP_STATUS, 429)
+        self.assertIn("Google Books API вернул 429 (Too Many Requests / лимит запросов исчерпан).", mock_stderr.getvalue())
+
+    @patch("urllib.request.urlopen")
+    def test_fetch_json_http_error_non_429(self, mock_urlopen):
+        import scripts.book_scanner
+        scripts.book_scanner.RATE_LIMIT_HIT = False
+        mock_urlopen.side_effect = urllib.error.HTTPError(
+            url="https://example.com/api/test",
+            code=500,
+            msg="Internal Server Error",
+            hdrs={},
+            fp=None
+        )
+
+        with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+            result = fetch_json("https://example.com/api/test")
+
+        self.assertIsNone(result)
+        self.assertFalse(scripts.book_scanner.RATE_LIMIT_HIT)
+        self.assertEqual(scripts.book_scanner.LAST_HTTP_STATUS, 500)
+        self.assertIn("Ошибка запроса к https://example.com/api/test", mock_stderr.getvalue())
+
 
 class TestDownloadImage(unittest.TestCase):
     """Tests for download_image atomic writes, error handling, and preservation."""
@@ -226,6 +275,13 @@ class TestDownloadImage(unittest.TestCase):
         self.assertFalse(download_image(None, self.dest_path))
         self.assertFalse(download_image(123, self.dest_path))
         self.assertFalse(download_image("invalid-url-scheme", self.dest_path))
+
+    def test_download_image_rejects_file_scheme(self):
+        with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+            result = download_image("file:///etc/passwd", self.dest_path)
+        self.assertFalse(result)
+        self.assertFalse(self.dest_path.exists())
+        self.assertIn("Некорректный или неподдерживаемый URL обложки: file:///etc/passwd", mock_stderr.getvalue())
 
     @patch("urllib.request.urlopen")
     def test_download_valid_image_success(self, mock_urlopen):
@@ -387,6 +443,7 @@ class TestSearchGoogleBooks(unittest.TestCase):
         self.assertEqual(result["language"], "ru")
         self.assertEqual(result["description"], "Культовый роман.")
         self.assertEqual(result["cover_url"], "https://books.google.com/books/content?id=xyz&zoom=2")
+        self.assertEqual(result["fallback_cover_url"], "https://books.google.com/books/content?id=xyz&zoom=1")
 
     @patch("scripts.book_scanner.fetch_json")
     def test_search_google_books_none_fields_payload(self, mock_fetch_json):
@@ -1058,21 +1115,183 @@ class TestAddBook(unittest.TestCase):
         fm = yaml.safe_load(raw.split("---")[1])
         self.assertEqual(fm["cover"], "/covers/my_cover.jpg")
 
-    def test_add_book_whitespace_title_author_fallback(self):
+    def test_add_book_whitespace_title_author_fails_and_creates_no_file(self):
+        with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+            success = add_book(
+                title="   ",
+                author="   ",
+                year=2024,
+                custom_cover="/covers/default-book.svg",
+                force=True,
+            )
+        self.assertFalse(success)
+        self.assertEqual(list(self.books_dir.glob("*.md")), [])
+
+    def test_add_book_search_no_results_and_no_explicit_data_returns_false(self):
+        with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+            success = add_book(query="Несуществующая книга")
+        self.assertFalse(success)
+        self.assertEqual(list(self.books_dir.glob("*.md")), [])
+        self.assertIn("Не удалось найти информацию", mock_stderr.getvalue())
+
+    def test_add_book_isbn_search_no_results_returns_false(self):
+        with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+            success = add_book(isbn="9780000000000")
+        self.assertFalse(success)
+        self.assertEqual(list(self.books_dir.glob("*.md")), [])
+        self.assertIn("Не удалось найти информацию", mock_stderr.getvalue())
+
+    def test_add_book_title_only_search_no_results_returns_false(self):
+        with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+            success = add_book(title="Без Автора")
+        self.assertFalse(success)
+        self.assertEqual(list(self.books_dir.glob("*.md")), [])
+        self.assertIn("Не удалось найти информацию", mock_stderr.getvalue())
+
+    def test_add_book_author_only_search_no_results_returns_false(self):
+        with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+            success = add_book(author="Без Названия")
+        self.assertFalse(success)
+        self.assertEqual(list(self.books_dir.glob("*.md")), [])
+        self.assertIn("Не удалось найти информацию", mock_stderr.getvalue())
+
+    def test_add_book_search_fails_but_explicit_title_and_author_creates_book(self):
+        success = add_book(title="Явная Книга", author="Явный Автор", year=2024)
+        self.assertTrue(success)
+        expected_md = self.books_dir / "yavnyy-avtor-yavnaya-kniga.md"
+        self.assertTrue(expected_md.exists())
+
+    @patch("scripts.book_scanner.search_open_library", return_value=None)
+    @patch("scripts.book_scanner.search_google_books")
+    def test_add_book_search_fails_with_429_outputs_agents_md_guidance(self, mock_gb, mock_ol):
+        import scripts.book_scanner
+        def side_effect(*args, **kwargs):
+            scripts.book_scanner.RATE_LIMIT_HIT = True
+            return None
+        mock_gb.side_effect = side_effect
+
+        with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+            success = add_book(query="Тестовая книга 429")
+
+        self.assertFalse(success)
+        self.assertEqual(list(self.books_dir.glob("*.md")), [])
+        err = mock_stderr.getvalue()
+        self.assertIn("429", err)
+        self.assertIn("AGENTS.md", err)
+        self.assertIn("-t, -a, -c, -y", err)
+
+    @patch("scripts.book_scanner.search_open_library", return_value=None)
+    @patch("scripts.book_scanner.search_google_books")
+    def test_add_book_search_fails_with_429_with_explicit_title_author_creates_book(self, mock_gb, mock_ol):
+        import scripts.book_scanner
+        def side_effect(*args, **kwargs):
+            scripts.book_scanner.RATE_LIMIT_HIT = True
+            return None
+        mock_gb.side_effect = side_effect
+
+        with patch("sys.stderr", new_callable=io.StringIO) as mock_stderr:
+            success = add_book(title="1984", author="Джордж Оруэлл", year=1949)
+
+        self.assertTrue(success)
+        expected_md = self.books_dir / "dzhordzh-oruell-1984.md"
+        self.assertTrue(expected_md.exists())
+        err = mock_stderr.getvalue()
+        self.assertIn("429", err)
+        self.assertIn("AGENTS.md", err)
+
+    @patch("scripts.book_scanner.download_image")
+    @patch("scripts.book_scanner.search_google_books")
+    def test_add_book_fallback_cover_download_attempted_on_primary_failure(self, mock_search, mock_download):
+        mock_search.return_value = {
+            "title": "Книга с запасной обложкой",
+            "author": "Автор",
+            "year": 2024,
+            "publisher": "Издательство",
+            "isbn": "9781234567890",
+            "pages": 200,
+            "genres": ["Тест"],
+            "language": "ru",
+            "description": "Описание",
+            "cover_url": "https://example.com/cover?zoom=2",
+            "fallback_cover_url": "https://example.com/cover?zoom=1",
+        }
+        mock_download.side_effect = [False, True]
+
+        success = add_book(query="Книга с запасной обложкой", force=True)
+        self.assertTrue(success)
+        self.assertEqual(mock_download.call_count, 2)
+        mock_download.assert_any_call(
+            "https://example.com/cover?zoom=2",
+            self.covers_dir / "avtor-kniga-s-zapasnoy-oblozhkoy.jpg"
+        )
+        mock_download.assert_any_call(
+            "https://example.com/cover?zoom=1",
+            self.covers_dir / "avtor-kniga-s-zapasnoy-oblozhkoy.jpg"
+        )
+        expected_md = self.books_dir / "avtor-kniga-s-zapasnoy-oblozhkoy.md"
+        raw = expected_md.read_text(encoding="utf-8")
+        fm = yaml.safe_load(raw.split("---")[1])
+        self.assertEqual(fm["cover"], "/covers/avtor-kniga-s-zapasnoy-oblozhkoy.jpg")
+
+    @patch("scripts.book_scanner.download_image", return_value=False)
+    @patch("scripts.book_scanner.search_google_books")
+    def test_add_book_fallback_cover_download_fails_falls_back_to_default_svg(self, mock_search, mock_download):
+        mock_search.return_value = {
+            "title": "Книга с двумя битыми обложками",
+            "author": "Автор",
+            "year": 2024,
+            "publisher": "",
+            "isbn": "",
+            "pages": None,
+            "genres": [],
+            "language": "ru",
+            "description": "",
+            "cover_url": "https://example.com/cover?zoom=2",
+            "fallback_cover_url": "https://example.com/cover?zoom=1",
+        }
+
+        success = add_book(query="Книга с двумя битыми обложками", force=True)
+        self.assertTrue(success)
+        self.assertEqual(mock_download.call_count, 2)
+        expected_md = self.books_dir / "avtor-kniga-s-dvumya-bitymi-oblozhkami.md"
+        raw = expected_md.read_text(encoding="utf-8")
+        fm = yaml.safe_load(raw.split("---")[1])
+        self.assertEqual(fm["cover"], "/covers/default-book.svg")
+
+    def test_add_book_force_preserves_existing_disk_cover(self):
+        cover_path = self.covers_dir / "avtor-kniga-s-sushchestvuyushchey-oblozhkoy.jpg"
+        cover_path.write_bytes(b"existing_disk_cover_data")
+
         success = add_book(
-            title="   ",
-            author="   ",
+            title="Книга с существующей обложкой",
+            author="Автор",
             year=2024,
-            custom_cover="/covers/default-book.svg",
             force=True,
         )
         self.assertTrue(success)
-        expected_md = self.books_dir / "neizvestnyy-avtor-bez-nazvaniya.md"
+        expected_md = self.books_dir / "avtor-kniga-s-sushchestvuyushchey-oblozhkoy.md"
         self.assertTrue(expected_md.exists())
         raw = expected_md.read_text(encoding="utf-8")
         fm = yaml.safe_load(raw.split("---")[1])
-        self.assertEqual(fm["title"], "Без названия")
-        self.assertEqual(fm["author"], "Неизвестный автор")
+        self.assertEqual(fm["cover"], "/covers/avtor-kniga-s-sushchestvuyushchey-oblozhkoy.jpg")
+        self.assertEqual(cover_path.read_bytes(), b"existing_disk_cover_data")
+
+    def test_add_book_room_shelf_loan_fields(self):
+        success = add_book(
+            title="Книга с локацией",
+            author="Автор",
+            year=2024,
+            room="Кабинет",
+            shelf="полка 1",
+            loan="Анна",
+        )
+        self.assertTrue(success)
+        expected_md = self.books_dir / "avtor-kniga-s-lokatsiey.md"
+        raw = expected_md.read_text(encoding="utf-8")
+        fm = yaml.safe_load(raw.split("---")[1])
+        self.assertEqual(fm["room"], "Кабинет")
+        self.assertEqual(fm["shelf"], "полка 1")
+        self.assertEqual(fm["loan"], "Анна")
 
     def test_add_book_default_description_body_generated(self):
         success = add_book(
@@ -1488,6 +1707,25 @@ class TestCLI(unittest.TestCase):
             with self.assertRaises(SystemExit) as cm:
                 main()
             self.assertEqual(cm.exception.code, 1)
+
+    @patch("scripts.book_scanner.add_book", return_value=True)
+    def test_cli_author_only_invocation_permitted(self, mock_add_book):
+        with patch.object(sys, "argv", ["book_scanner.py", "-a", "Достоевский"]):
+            main()
+        self.assertTrue(mock_add_book.called)
+        self.assertEqual(mock_add_book.call_args[1]["author"], "Достоевский")
+
+    @patch("scripts.book_scanner.add_book", return_value=True)
+    def test_cli_room_shelf_loan_passed_to_add_book(self, mock_add_book):
+        with patch.object(
+            sys, "argv",
+            ["book_scanner.py", "-t", "Тест", "-a", "Автор", "--room", "Кабинет", "--shelf", "полка 1", "--loan", "Анна"]
+        ):
+            main()
+        self.assertTrue(mock_add_book.called)
+        self.assertEqual(mock_add_book.call_args[1]["room"], "Кабинет")
+        self.assertEqual(mock_add_book.call_args[1]["shelf"], "полка 1")
+        self.assertEqual(mock_add_book.call_args[1]["loan"], "Анна")
 
 
 if __name__ == "__main__":

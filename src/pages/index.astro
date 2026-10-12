@@ -612,6 +612,9 @@ const sortedBooks = [...allBooks].sort((a, b) => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.defaultPrevented || e.isComposing) return;
 
+      const drawer = document.getElementById('mobile-drawer');
+      if (drawer && !drawer.hasAttribute('inert')) return;
+
       const isCmdK = (e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey) && !e.altKey;
       const isSlash = e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey;
 
